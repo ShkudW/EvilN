@@ -79,7 +79,7 @@ Create File:
 ```
 Create Log file:
 ```bash
-touch /var/log/captive.log
+touch /var/log/ca.log
 ```
 Permission to log file:
 ```bash
