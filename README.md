@@ -83,8 +83,8 @@ touch /var/log/captive.log
 ```
 Permission to log file:
 ```bash
-sudo chown www-data:www-data /var/log/captive.log
-sudo chmod 664 /var/log/captive.log
+sudo chown www-data:www-data /var/log/ca.log
+sudo chmod 640 /var/log/ca.log
 ```
 
 New Vhost:
