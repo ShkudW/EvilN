@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import os
 import sys
 import subprocess
@@ -7,7 +10,7 @@ import time
 import ipaddress
 import shutil
 
-
+# --- Global variables to hold process handles and arguments for cleanup ---
 dnsmasq_proc = None
 hostapd_proc = None
 script_args = None
@@ -46,7 +49,7 @@ def check_dependencies():
     print("[*] Checking for required packages...")
     missing = []
     for dep in dependencies:
-       
+        # Use 'dpkg-query' for a more reliable check on Debian-based systems
         if subprocess.call(['dpkg-query', '-W', '-f=${Status}', dep], 
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) != 0:
             missing.append(dep)
@@ -65,6 +68,7 @@ def configure_interface(iface, network_str):
     print(f"[*] Configuring interface {iface}...")
     try:
         network = ipaddress.ip_network(network_str)
+        # Use the first host address for the interface (e.g., 192.168.50.1)
         ip_addr = str(next(network.hosts()))
         
         commands = [
@@ -203,7 +207,8 @@ def create_vhost():
     vhost_file = "/etc/apache2/sites-available/captive.conf"
     print(f"[*] Creating VirtualHost file: {vhost_file}...")
     
-    vhost_content = """
+    # Using a raw string (r"...") to prevent syntax warnings for '\.'
+    vhost_content = r"""
 <VirtualHost *:80>
     ServerName captive.portal
     ServerAlias *
@@ -257,7 +262,8 @@ def setup_iptables(iface):
     commands = [
         ['iptables', '-t', 'nat', '-A', 'PREROUTING', '-i', iface, '-p', 'tcp', '--dport', '80', '-j', 'REDIRECT', '--to-ports', '80'],
         ['iptables', '-t', 'nat', '-A', 'PREROUTING', '-i', iface, '-p', 'udp', '--dport', '53', '-j', 'REDIRECT', '--to-ports', '53'],
-        ['iptables', '-t', 'nat', 'A', 'PREROUTING', '-i', iface, '-p', 'tcp', '--dport', '53', '-j', 'REDIRECT', '--to-ports', '53']
+        # --- FIX: Changed 'A' to '-A' ---
+        ['iptables', '-t', 'nat', '-A', 'PREROUTING', '-i', iface, '-p', 'tcp', '--dport', '53', '-j', 'REDIRECT', '--to-ports', '53']
     ]
     for cmd in commands:
         if not run_command(cmd):
