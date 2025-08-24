@@ -384,10 +384,10 @@ def main():
     global script_args
     
     parser = argparse.ArgumentParser(description="Evil Twin Attack Automation Script")
-    parser.add_argument('--iface', required=True, help="Wireless interface to use (e.g., wlan0)")
+    parser.add_argument('--iface', required=True, help="Wireless interface to use ( wlan0)")
     parser.add_argument('--ssid', required=True, help="SSID for the fake network")
     parser.add_argument('--channel', required=True, type=int, help="Channel for the network (1-11)")
-    parser.add_argument('--network', required=True, help="Network address in CIDR format (e.g., 192.168.50.0/24)")
+    parser.add_argument('--network', required=True, help="Network address in CIDR format ( 192.168.50.0/24)")
     script_args = parser.parse_args()
 
     check_root()
