@@ -7,7 +7,7 @@ import time
 import ipaddress
 import shutil
 
-# --- Global variables to hold process handles and arguments for cleanup ---
+
 dnsmasq_proc = None
 hostapd_proc = None
 script_args = None
@@ -48,8 +48,7 @@ def check_dependencies():
     print("[*] Checking for required packages...")
     missing = []
     for dep in dependencies:
-        if subprocess.call(['dpkg-query', '-W', '-f=${Status}', dep], 
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) != 0:
+        if subprocess.call(['dpkg-query', '-W', '-f=${Status}', dep], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) != 0:
             missing.append(dep)
 
     if missing:
@@ -281,12 +280,10 @@ def start_attack():
     
     try:
         print("[*] Starting dnsmasq...")
-        dnsmasq_proc = subprocess.Popen(['dnsmasq', '-C', 'dnsmasq.conf', '-d'], 
-                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        dnsmasq_proc = subprocess.Popen(['dnsmasq', '-C', 'dnsmasq.conf', '-d'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         
         print("[*] Starting hostapd...")
-        hostapd_proc = subprocess.Popen(['hostapd', 'hostapd.conf'], 
-                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        hostapd_proc = subprocess.Popen(['hostapd', 'hostapd.conf'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         
         time.sleep(2)
         
