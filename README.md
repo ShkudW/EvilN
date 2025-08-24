@@ -4,7 +4,7 @@ if you love your neighbors, this tool is for you :)
 
 Just kiding (not really... )
 
-Any use of this tool is at your own risk, this tool should be used in a lab environment
+Any use of this tool is at your own risk, this tool should be used in a lab environment  (not really... )
 
 ## If you like things done authomatically, Use:
 ```python
