@@ -10,6 +10,16 @@ Any use of this tool is at your own risk, this tool should be used in a lab envi
 ```python
 python3 EvilN.py --iface wlan0 --ssid "MyLan" --channel 1 --network 10.0.0.0/24
 ```
+ 1) Install the new keyring (official one-liner)
+sudo wget https://archive.kali.org/archive-keyring.gpg -O /usr/share/keyrings/kali-archive-keyring.gpg
+
+ 2) (Optional) Verify checksum matches the official value
+sha1sum /usr/share/keyrings/kali-archive-keyring.gpg
+expected: 603374c107a90a69d983dbcb4d31e0d6eedfc325
+
+ 3) Update
+sudo apt update
+
 
 ## If you like things dome manually, Use:
 
