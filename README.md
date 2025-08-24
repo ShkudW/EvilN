@@ -131,3 +131,8 @@ sudo iptables -t nat -A PREROUTING -i wlan0 -p tcp --dport 53 -j REDIRECT --to-p
 sudo dnsmasq -C dnsmasq.conf
 sudo hostapd hostapd.conf
 ```
+
+```bash
+sudo pkill dnsmasq
+sudo dnsmasq -C /full/path/to/dnsmasq.conf
+```
