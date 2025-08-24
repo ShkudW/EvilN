@@ -416,18 +416,18 @@ def main():
     CH_24 = set(range(1, 14))
     CH_5_NON_DFS = {36, 40, 44, 48, 149, 153, 157, 161, 165}
 
-    if args.band == "2.4" and args.channel not in CH_24:
-        parser.error(f"--channel {args.channel} Use channels from 1-14")
-    if args.band == "5" and args.channel not in CH_5_NON_DFS:
-        parser.error(f"--channel {args.channel} Use channels from 36, 40, 44, 48, 149, 153, 157, 161, 165")
-    if args.band == '2.4':
+    if script_args.band == "2.4" and script_args.channel not in CH_24:
+        parser.error(f"--channel {script_args.channel} Use channels from 1-14")
+    if script_args.band == "5" and script_args.channel not in CH_5_NON_DFS:
+        parser.error(f"--channel {script_args.channel} Use channels from 36, 40, 44, 48, 149, 153, 157, 161, 165")
+    if script_args.band == '2.4':
         create_hostapd_conf2_4(script_args.iface, script_args.ssid, script_args.channel)
-    if args.band == '5':
+    if script_args.band == '5':
         create_hostapd_conf5(script_args.iface, script_args.ssid, script_args.channel)
     setup_apache()
-    if args.Cap == 'default':
+    if script_args.Cap == 'default':
         setup_captive_portal_files("default")
-    if args.Cap == 'microsoft':
+    if script_args.Cap == 'microsoft':
         setup_captive_portal_files("microsoft")
     setup_log_file()
     create_vhost()
