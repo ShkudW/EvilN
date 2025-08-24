@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 import os
 import sys
 import subprocess
@@ -62,6 +59,19 @@ def check_dependencies():
         print("[-] Example: sudo apt update && sudo apt install -y " + " ".join(missing))
         sys.exit(1)
     print("[+] All dependencies are installed.")
+
+def toggle_ip_forwarding(enable=True):
+    """Enables or disables IP forwarding."""
+    action = "Enabling" if enable else "Disabling"
+    value = "1" if enable else "0"
+    print(f"[*] {action} IP forwarding...")
+    try:
+        with open('/proc/sys/net/ipv4/ip_forward', 'w') as f:
+            f.write(value)
+        return True
+    except IOError as e:
+        print(f"[-] Failed to {action.lower()} IP forwarding: {e}")
+        return False
 
 def configure_interface(iface, network_str):
     """Configures the network interface with a static IP address."""
@@ -262,7 +272,6 @@ def setup_iptables(iface):
     commands = [
         ['iptables', '-t', 'nat', '-A', 'PREROUTING', '-i', iface, '-p', 'tcp', '--dport', '80', '-j', 'REDIRECT', '--to-ports', '80'],
         ['iptables', '-t', 'nat', '-A', 'PREROUTING', '-i', iface, '-p', 'udp', '--dport', '53', '-j', 'REDIRECT', '--to-ports', '53'],
-        # --- FIX: Changed 'A' to '-A' ---
         ['iptables', '-t', 'nat', '-A', 'PREROUTING', '-i', iface, '-p', 'tcp', '--dport', '53', '-j', 'REDIRECT', '--to-ports', '53']
     ]
     for cmd in commands:
@@ -331,6 +340,9 @@ def cleanup(signum, frame):
         ]
         for rule in rules:
             run_command(['iptables'] + rule)
+
+    # --- Disable IP Forwarding ---
+    toggle_ip_forwarding(enable=False)
 
     # --- Flush interface ---
     if script_args:
@@ -402,6 +414,12 @@ def main():
     setup_log_file()
     create_vhost()
     enable_apache_site()
+    
+    # --- Enable IP Forwarding before setting rules ---
+    if not toggle_ip_forwarding(enable=True):
+        cleanup(0, 0)
+        sys.exit(1)
+
     setup_iptables(script_args.iface)
     
     # --- Attack Phase ---
