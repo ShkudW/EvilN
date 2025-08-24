@@ -427,7 +427,7 @@ def main():
     create_dnsmasq_conf(script_args.iface, ip_addr, script_args.network)
     create_hostapd_conf(script_args.iface, script_args.ssid, script_args.channel)
     setup_apache()
-    setup_ captive_portal_files()
+    setup_captive_portal_files()
     setup_log_file()
     create_vhost()
     enable_apache_site()
