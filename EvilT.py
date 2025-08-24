@@ -207,7 +207,8 @@ def add_iptables_rules(iface: str):
     for rule in rules:
         run(rule, quiet=True)
     iptables_rules.extend(rules)
-     print("[+] Set Up Iptables")
+    print("[+] Set up iptables")
+
 
 
 def del_iptables_rules():
