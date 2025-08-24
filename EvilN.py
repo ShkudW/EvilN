@@ -383,7 +383,7 @@ def main():
     """Main function to orchestrate the setup and attack."""
     global script_args
     
-    parser = argparse.ArgumentParser(description="Evil Twin Attack Automation Script")
+    parser = argparse.ArgumentParser(description="Just loving your neighbor")
     parser.add_argument('--iface', required=True, help="Wireless interface to use ( wlan0)")
     parser.add_argument('--ssid', required=True, help="SSID for the fake network")
     parser.add_argument('--channel', required=True, type=int, help="Channel for the network (1-11)")
