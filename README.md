@@ -2,12 +2,12 @@
 
 if you love your neighbors, this tool is for you :)
 
-## If you like things Authomation, Use:
+## If you like things done authomatically, Use:
 ```python
 python3 EvilT.py --iface wlan0 --ssid "MyLan" --channel 1 --network 10.0.0.0/24
 ```
 
-## If you like things Manual, Use:
+## If you like things dome manually, Use:
 
 ### 1) Installation all pachages:
 ```bash
