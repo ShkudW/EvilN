@@ -68,6 +68,15 @@ def manage_network_manager(action='stop'):
     run_command(service_cmd)
     print(f"[+] NetworkManager {action} command issued.")
 
+def manage_systemd_resolved(action='stop'):
+    """Stops or starts the systemd-resolved service to free up port 53."""
+    service_cmd = ['systemctl', action, 'systemd-resolved']
+    print(f"[*] Attempting to {action} systemd-resolved...")
+    # This is a critical step for dnsmasq to work
+    run_command(service_cmd)
+    print(f"[+] systemd-resolved {action} command issued.")
+
+
 def toggle_ip_forwarding(enable=True):
     """Enables or disables IP forwarding."""
     action = "Enabling" if enable else "Disabling"
@@ -356,7 +365,8 @@ def cleanup(signum, frame):
         print(f"[*] Flushing IP from {script_args.iface}...")
         run_command(['ip', 'addr', 'flush', 'dev', script_args.iface])
     
-    # --- Restart NetworkManager ---
+    # --- Restart services ---
+    manage_systemd_resolved(action='start')
     manage_network_manager(action='start')
 
     # --- Handle log file ---
@@ -420,8 +430,10 @@ def main():
     # Register the cleanup function for SIGINT (Ctrl+C)
     signal.signal(signal.SIGINT, cleanup)
     
-    # Stop NetworkManager to prevent conflicts
+    # Stop conflicting services
     manage_network_manager(action='stop')
+    manage_systemd_resolved(action='stop')
+    time.sleep(1) # Give services time to stop properly
     
     ip_addr = configure_interface(script_args.iface, script_args.network)
     create_dnsmasq_conf(script_args.iface, ip_addr, script_args.network)
