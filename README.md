@@ -1,5 +1,11 @@
 # Evil-Twin
 Set up your LAB
+## If you like things Authomation, Use:
+```python
+python3 EvilT.py --iface wlan0 --ssid "MyLan" --channel 1 --network 10.0.0.0/24
+```
+
+## If you like things Manual, Use:
 
 ### 1) Installation all pachages:
 ```bash
