@@ -1,4 +1,4 @@
-# EvilT
+# EvilN -> Evil-Neighbor
 
 if you love your neighbors, this tool is for you :)
 
