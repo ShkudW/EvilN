@@ -1,5 +1,7 @@
-# Evil-Twin
-Set up your LAB
+# EvilT
+
+if you love your neighbors, this tool is for you :)
+
 ## If you like things Authomation, Use:
 ```python
 python3 EvilT.py --iface wlan0 --ssid "MyLan" --channel 1 --network 10.0.0.0/24
