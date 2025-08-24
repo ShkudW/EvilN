@@ -111,7 +111,7 @@ nano /etc/apache2/sites-available/captive.conf
 </VirtualHost>
 ```
 
-### 10) Create Vhost:
+### 10) Start a2ensite:
 ```bash
 sudo a2ensite captive.conf
 sudo a2dissite 000-default.conf
@@ -119,17 +119,15 @@ sudo systemctl reload apache2
 ```
 
 
-### 11) Create Vhost:
-IpTables:
+### 11) Create IpTables:
 ```bash
 sudo iptables -t nat -A PREROUTING -i wlan0 -p tcp --dport 80 -j REDIRECT --to-ports 80
 sudo iptables -t nat -A PREROUTING -i wlan0 -p udp --dport 53 -j REDIRECT --to-ports 53
 sudo iptables -t nat -A PREROUTING -i wlan0 -p tcp --dport 53 -j REDIRECT --to-ports 53
 ```
 
-### 12) Create Vhost:
-start:
+### 12) start:
 ```bash
-sudo hostapd hostapd.conf
 sudo dnsmasq -C dnsmasq.conf
+sudo hostapd hostapd.conf
 ```
