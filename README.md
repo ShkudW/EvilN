@@ -60,13 +60,13 @@ sudo mkdir -p /var/www/captive
 
 ### 6) Create Web Captive Portal:
 ```bash
-/var/www/captive/index.html
-/var/www/captive/save.php
+sudo mv index.html /var/www/captive/
+sudo mv save.php /var/www/captive/
 ```
 
 ### 7) Create log file:
 ```bash
-touch /var/log/ca.log
+sudo touch /var/log/ca.log
 ```
 
 ### 8) Permission for file:
