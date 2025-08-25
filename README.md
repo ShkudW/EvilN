@@ -18,7 +18,7 @@ python3 EvilN.py --iface wlan0 --ssid "MyLan" --band 5 --channel 36 --network 10
 ```
 
 
-## If you like things dome manually, Use:
+## If you like things done manually, Use:
 
 ### 1) Installation all pachages:
 ```bash
