@@ -216,4 +216,7 @@ sudo rm /etc/apache2/sites-available/captive.conf
 sudo rm /var/log/ca.log
 sudo rm -r /var/www/captive/
 sudo systemctl stop apache2
+sudo ip link set wlan0 down
+sudo ip addr flush dev wlan0
+sudo ip link set wlan0 up
 ```
