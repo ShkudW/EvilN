@@ -267,30 +267,20 @@ def create_vhost_microsoft():
         Require all granted
         Options -MultiViews
     </Directory>
-
     Alias /hotspot-detect.html /var/www/captive/index.html
     Alias /generate_204       /var/www/captive/index.html
     Alias /connecttest.txt    /var/www/captive/index.html
-
     RewriteEngine On
-
-    RewriteCond %{REQUEST_URI} !^/(hotspot-detect\.html|generate_204|connecttest\.txt)$
-
-    RewriteCond %{REQUEST_FILENAME} -f [OR]
-    RewriteCond %{REQUEST_FILENAME} -d
-    RewriteRule ^ - [L]
-
+    RewriteRule ^(save\.php|password\.php|save2\.php)$ - [L]
+    RewriteRule \.(?:css|js|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|map)$ - [L,NC]
     RewriteRule ^ /index.html [L]
-
-
     Header always set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
     Header always set Pragma "no-cache"
     Header always set Expires "0"
-
     Header always set X-VHost "captive-portal"
-
     AddType image/svg+xml .svg .svgz
 </VirtualHost>
+
 
 """
     try:
