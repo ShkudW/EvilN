@@ -6,7 +6,7 @@ Just kiding (not really... ),
 
 I wrote it just for helping you with your Penetration testing/Red Team assesment
 
-!ANY USE OF THIS TOOL IS AT YOUR OWN ROSK!
+!ANY USE OF THIS TOOL IS AT YOUR OWN RISK!
 
 I recommend working with kali linux, preferably from VMware, and to get a better result, 
 use dual band (--dual), but for this you will need two wifi adapters - two alfa.
