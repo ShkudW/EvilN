@@ -835,9 +835,11 @@ def main():
     parser.add_argument("--channel5", dest="channel5", default="36", help="5GHz Channel")
     script_args = parser.parse_args()
 
-    if script_args.dual and (not script_args.iface1 or not script_args.iface2 or not script_args.channel2.4 or not script_args.channel5):
-        parser.error("--iface1 and --iface2 and --channel1 and --channel2 are required when using --Dual")
-    
+
+    if script_args.dual and (script_args.iface1 is None or script_args.iface2 is None or script_args.channel1 is None or script_args.channel2 is None):
+        parser.error("--dual requires --iface1 --iface2 --channel1 --channel2")
+
+
     CH_24 = set(range(1, 14))
     CH_5_NON_DFS = {36, 40, 44, 48, 149, 153, 157, 161, 165}
 
