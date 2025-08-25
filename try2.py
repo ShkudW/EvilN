@@ -893,7 +893,7 @@ def main():
         setup_iptables(script_args.iface1)
         setup_iptables(script_args.iface2)
 
-        start_attack_dual(script_args.channel2.4, script_args.channel5)
+        start_attack_dual(script_args.channel24, script_args.channel5)
 
         while True:
             time.sleep(1)
