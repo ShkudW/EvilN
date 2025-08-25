@@ -225,9 +225,6 @@ def setup_captive_portal_files(Cap: str):
     portal_dir = "/var/www/captive"
     print(f"[*] Setting up captive portal files in {portal_dir}...")
     
-    if not os.path.exists("index.html") or not os.path.exists("save.php"):
-        print("[-] Error: 'index.html' and/or 'save.php' not found in the current directory.")
-        sys.exit(1)
         
     if not os.path.exists(portal_dir):
         print(f"[*] Directory {portal_dir} not found. Creating...")
@@ -257,9 +254,6 @@ def setup_captive_portal_files_dual(Cap: str):
     portal_dir = "/var/www/captive_dual"
     print(f"[*] Setting up captive portal files in {portal_dir}...")
     
-    if not os.path.exists("index.html") or not os.path.exists("save.php"):
-        print("[-] Error: 'index.html' and/or 'save.php' not found in the current directory.")
-        sys.exit(1)
         
     if not os.path.exists(portal_dir):
         print(f"[*] Directory {portal_dir} not found. Creating...")
