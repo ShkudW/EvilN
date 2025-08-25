@@ -18,7 +18,6 @@ $ip   = norm_ip($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
 $ua   = substr($_SERVER['HTTP_USER_AGENT'] ?? '-', 0, 180);
 $when = gmdate('c');
 
-/* אותו פורמט ואותו קובץ כמו save.php */
 $line = json_encode([
   'ts'    => $when,
   'ip'    => $ip,
@@ -67,3 +66,4 @@ error_log("captive-portal: $line");
   </div>
 </body>
 </html>
+
