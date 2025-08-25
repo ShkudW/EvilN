@@ -207,5 +207,13 @@ sudo hostapd hostapd.conf
 ### Kill the process:
 ```bash
 sudo pkill dnsmasq
-sudo dnsmasq -C /full/path/to/dnsmasq.conf
+sudo iptables -t nat -D PREROUTING -i wlan0 -p tcp --dport 80 -j REDIRECT --to-ports 80
+sudo iptables -t nat -D PREROUTING -i wlan0 -p udp --dport 53 -j REDIRECT --to-ports 53
+sudo iptables -t nat -D PREROUTING -i wlan0 -p tcp --dport 53 -j REDIRECT --to-ports 53
+sudo rm dnsmasq.conf
+sudo rm hostapd.conf
+sudo rm /etc/apache2/sites-available/captive.conf
+sudo rm /var/log/ca.log
+sudo rm -r /var/www/captive/
+sudo systemctl stop apache2
 ```
