@@ -870,8 +870,6 @@ def main():
     if script_args.band and (script_args.ssid is None or script_args.channel is None or script_args.network is None):
         parser.error("--band require --ssid and --channel and --network")
     
-    if script_args.iface and (script_args.ssid is None or script_args.channel is None or script_args.network is None or script_args.band is None):
-        parser.error("--iface require --ssid and --channel and --network and --band")
 
 
     CH_24 = set(range(1, 14))
