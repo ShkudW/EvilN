@@ -622,10 +622,11 @@ def cleanup_dual(signum, frame):
     if dnsmasq_proc:
         dnsmasq_proc.terminate()
         print("[*] Terminated dnsmasq.")
+    run_command(['pkill', 'dnsmasq'], ignore_errors=True)
     if hostapd_proc:
         hostapd_proc.terminate()
         print("[*] Terminated hostapd.")
-    run_command(['pkill', 'dnsmasq'], ignore_errors=True)
+    run_command(['pkill', 'hostapd'], ignore_errors=True)
 
 
     if script_args.iface1:
@@ -741,10 +742,11 @@ def cleanup(signum, frame):
     if dnsmasq_proc:
         dnsmasq_proc.terminate()
         print("[*] Terminated dnsmasq.")
+    run_command(['pkill', 'dnsmasq'], ignore_errors=True)
     if hostapd_proc:
         hostapd_proc.terminate()
         print("[*] Terminated hostapd.")
-    run_command(['pkill', 'dnsmasq'], ignore_errors=True)
+    run_command(['pkill', 'hostapd'], ignore_errors=True)
 
 
     if script_args:
@@ -890,6 +892,7 @@ def main():
 
         while True:
             time.sleep(1)
+
     ################################################################
     else:
         check_root()
