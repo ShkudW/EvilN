@@ -2,9 +2,14 @@
 
 if you love your neighbors, this tool is for you :)
 
-Just kiding (not really... )
+Just kiding (not really... ), 
 
-Any use of this tool is at your own risk, this tool should be used in a lab environment  (not really... )
+I wrote it just for helping you with your Penetration testing/Red Team assesment
+
+!ANY USE OF THIS TOOL IS AT YOUR OWN ROSK!
+
+I recommend working with kali linux, preferably from VMware, and to get a better result, 
+use dual band (--dual), but for this you will need two wifi adapters - two alfa.
 
 ## If you like things done authomatically, Use:
 
