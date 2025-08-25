@@ -185,8 +185,8 @@ def setup_captive_portal_files(Cap: str):
     try:
         print("[*] Copying portal files...")
         if Cap == "default":
-            shutil.copy("index.html", os.path.join(portal_dir, "index.html"))
-            shutil.copy("save.php", os.path.join(portal_dir, "save.php"))
+            shutil.copy("Default/index.html", os.path.join(portal_dir, "index.html"))
+            shutil.copy("Default/save.php", os.path.join(portal_dir, "save.php"))
         if Cap == "microsoft": 
             shutil.copy("Microsoft/index.html", os.path.join(portal_dir, "index.html"))
             shutil.copy("Microsoft/password.php", os.path.join(portal_dir, "password.php"))
