@@ -562,7 +562,7 @@ def start_attack_dual():
     try:
         
         print("[*] Starting hostapd...")
-        hostapd_proc = subprocess.Popen(['hostapd', 'hostapd_dual.conf'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        hostapd_proc = subprocess.Popen(['hostapd', '-P', '/var/run/hostapd-5.pid' 'hostapd_dual.conf'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         
         time.sleep(2)
         
