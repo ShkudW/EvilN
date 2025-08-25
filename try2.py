@@ -541,7 +541,7 @@ def start_attack():
         
         print("[*] Starting hostapd...")
         if script_args.band == "5":
-            hostapd_proc = subprocess.Popen(['hostapd', 'hostapd.conf'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            hostapd_proc = subprocess.Popen(['hostapd', 'hostapd_5.conf'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         else:
             hostapd_proc = subprocess.Popen(['hostapd', 'hostapd_24.conf'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         time.sleep(2)
