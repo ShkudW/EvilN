@@ -263,21 +263,22 @@ def create_vhost_microsoft():
     DocumentRoot /var/www/captive
 
     <Directory /var/www/captive>
-        AllowOverride All
+        AllowOverride None
         Require all granted
         Options -MultiViews
     </Directory>
+
     Alias /hotspot-detect.html /var/www/captive/index.html
     Alias /generate_204       /var/www/captive/index.html
     Alias /connecttest.txt    /var/www/captive/index.html
 
     RewriteEngine On
+
     RewriteCond %{REQUEST_URI} !^/(hotspot-detect\.html|generate_204|connecttest\.txt)$
 
-    RewriteRule ^(save\.php|password\.php|save2\.php|microsoft\.svg)$ - [L]
-
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
 
     RewriteRule ^ /index.html [L]
 
@@ -285,6 +286,8 @@ def create_vhost_microsoft():
     Header always set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
     Header always set Pragma "no-cache"
     Header always set Expires "0"
+
+    Header always set X-VHost "captive-portal"
 
     AddType image/svg+xml .svg .svgz
 </VirtualHost>
