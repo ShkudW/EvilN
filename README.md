@@ -7,23 +7,26 @@ Just kiding (not really... )
 Any use of this tool is at your own risk, this tool should be used in a lab environment  (not really... )
 
 ## If you like things done authomatically, Use:
-2.4GHz with microsoft Captive Portal:
+
+### Dual Band (2.4GHz and 5GHz):
+- iface1 assosiated to -channel2.4 (2.4GHz)
+- iface2 assosiated to -channel5 (5GHz)
 ```python
-python3 EvilN.py --iface wlan0 --ssid "MyLan" --band 2.4 --channel 1 --network 10.0.0.0/24 --CaptivePortal microsoft
-```
-2.4GHz with default Captive Portal:
-```python
-python3 EvilN.py --iface wlan0 --ssid "MyLan" --band 2.4 --channel 1 --network 10.0.0.0/24 --CaptivePortal default
-```
-5GHz with microsoft Captive Portal:
-```python
-python3 EvilN.py --iface wlan0 --ssid "MyLan" --band 5 --channel 36 --network 10.0.0.0/24 --CaptivePortal microsoft
-```
-5GHz with default Captive Portal:
-```python
-python3 EvilN.py --iface wlan0 --ssid "MyLan" --band 5 --channel 36 --network 10.0.0.0/24 --CaptivePortal default
+python3 EvilN.py --dual --iface1 wlan1 --iface2 wlan0 --channel2.4 1 --channel5 36 --ssid "MyLan" --network 10.0.0.0/24 --CaptivePortal microsoft
+python3 EvilN.py --dual --iface1 wlan1 --iface2 wlan0 --channel2.4 1 --channel5 36 --ssid "MyLan" --network 10.0.0.0/24 --CaptivePortal default
 ```
 
+### 2.4GHz Single::
+```python
+python3 EvilN.py --band 2.4 --iface wlan0 --ssid "MyLan" --channel 1 --network 10.0.0.0/24 --CaptivePortal microsoft
+python3 EvilN.py --band 2.4 --iface wlan0 --ssid "MyLan" --channel 6 --network 10.0.0.0/24 --CaptivePortal default
+```
+
+### 5GHz Single:
+```python
+python3 EvilN.py --band 5 --iface wlan1 --ssid "MyLan" --channel 36 --network 10.0.0.0/24 --CaptivePortal microsoft
+python3 EvilN.py --band 5 --iface wlan1 --ssid "MyLan" --channel 40 --network 10.0.0.0/24 --CaptivePortal default
+```
 
 ## If you like things done manually, Use:
 
@@ -226,4 +229,5 @@ sudo systemctl stop apache2
 sudo ip link set wlan0 down
 sudo ip addr flush dev wlan0
 sudo ip link set wlan0 up
+systemctl start NetworkManager
 ```
