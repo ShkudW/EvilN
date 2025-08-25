@@ -560,19 +560,12 @@ def start_attack_dual():
     time.sleep(1)
     
     try:
-        print("[*] Starting dnsmasq...")
-        dnsmasq_proc = subprocess.Popen(['dnsmasq', '-C', 'dnsmasq.conf', '-d'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         
         print("[*] Starting hostapd...")
         hostapd_proc = subprocess.Popen(['hostapd', 'hostapd_dual.conf'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         
         time.sleep(2)
         
-        if dnsmasq_proc.poll() is not None:
-            stdout, stderr = dnsmasq_proc.communicate()
-            print("[-] dnsmasq failed to start. Error output:")
-            print(stderr.decode().strip())
-            raise Exception("dnsmasq failed.")
 
         if hostapd_proc.poll() is not None:
             stdout, stderr = hostapd_proc.communicate()
