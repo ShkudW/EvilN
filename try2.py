@@ -831,7 +831,7 @@ def main():
     parser.add_argument("--Dual", dest="dual", action="store_true", help="for fual band")
     parser.add_argument("--iface1", dest="iface1", help="First interface")
     parser.add_argument("--iface2", dest="iface2", help="Second interface")
-    parser.add_argument("--channel2.4", dest="channel2.4", default="1", help="2.4GHz Channel")
+    parser.add_argument("--channel2.4", dest="channel24", default="1", help="2.4GHz Channel")
     parser.add_argument("--channel5", dest="channel5", default="36", help="5GHz Channel")
     script_args = parser.parse_args()
 
@@ -862,7 +862,7 @@ def main():
         ip_addr2 = configure_interface(script_args.iface2, script_args.network)
         create_dnsmasq_conf_dual(script_args.iface1,script_args.iface2, ip_addr, script_args.network)
 
-        create_hostapd_conf2_4(script_args.iface1, script_args.ssid, script_args.iface2.4)
+        create_hostapd_conf2_4(script_args.iface1, script_args.ssid, script_args.channel24)
         create_hostapd_conf5(script_args.iface2, script_args.ssid, script_args.channel5)
         
         setup_apache()
