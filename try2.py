@@ -822,10 +822,10 @@ def main():
     global script_args
     
     parser = argparse.ArgumentParser(description="Just loving your neighbor")
-    parser.add_argument('--iface', required=True, help="Wireless interface to use ( wlan0)")
+    parser.add_argument('--iface', help="Wireless interface to use ( wlan0)")
     parser.add_argument('--ssid', required=True, help="SSID for the fake network")
-    parser.add_argument("--band", dest="band", required=True, choices=["2.4", "5"], help="Choose WiFi band: 2.4GHz or 5GHz")
-    parser.add_argument('--channel', required=True, type=int, help="Channel for the network")
+    parser.add_argument("--band", dest="band", choices=["2.4", "5"], help="Choose WiFi band: 2.4GHz or 5GHz")
+    parser.add_argument('--channel', type=int, help="Channel for the network")
     parser.add_argument('--network', required=True, help="Network address in CIDR format ( 192.168.50.0/24)")
     parser.add_argument("--CaptivePortal", dest="Cap", choices=["default", "microsoft"], default="default", help="Choose Your Captive Portal")
     parser.add_argument("--Dual", dest="dual", action="store_true", help="for fual band")
