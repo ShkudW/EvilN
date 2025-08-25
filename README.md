@@ -21,7 +21,7 @@ python3 EvilN.py --dual --iface1 wlan1 --iface2 wlan0 --channel2.4 1 --channel5 
 python3 EvilN.py --dual --iface1 wlan1 --iface2 wlan0 --channel2.4 1 --channel5 36 --ssid "MyLan" --network 10.0.0.0/24 --CaptivePortal default
 ```
 
-### 2.4GHz Single::
+### 2.4GHz Single:
 ```python
 python3 EvilN.py --band 2.4 --iface wlan0 --ssid "MyLan" --channel 1 --network 10.0.0.0/24 --CaptivePortal microsoft
 python3 EvilN.py --band 2.4 --iface wlan0 --ssid "MyLan" --channel 6 --network 10.0.0.0/24 --CaptivePortal default
