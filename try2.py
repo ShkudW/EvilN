@@ -254,7 +254,6 @@ def setup_captive_portal_files_dual(Cap: str):
     portal_dir = "/var/www/captive_dual"
     print(f"[*] Setting up captive portal files in {portal_dir}...")
     
-        
     if not os.path.exists(portal_dir):
         print(f"[*] Directory {portal_dir} not found. Creating...")
         if not run_command(['mkdir', '-p', portal_dir]):
@@ -541,8 +540,10 @@ def start_attack():
         dnsmasq_proc = subprocess.Popen(['dnsmasq', '-C', 'dnsmasq.conf', '-d'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         
         print("[*] Starting hostapd...")
-        hostapd_proc = subprocess.Popen(['hostapd', 'hostapd.conf'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        
+        if script_args.band == "5":
+            hostapd_proc = subprocess.Popen(['hostapd', 'hostapd.conf'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        else:
+            hostapd_proc = subprocess.Popen(['hostapd', 'hostapd_24.conf'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         time.sleep(2)
         
         if dnsmasq_proc.poll() is not None:
