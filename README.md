@@ -17,11 +17,11 @@ python3 EvilN.py --iface wlan0 --ssid "MyLan" --band 2.4 --channel 1 --network 1
 ```
 5GHz with microsoft Captive Portal:
 ```python
-python3 EvilN.py --iface wlan0 --ssid "MyLan" --band 5 --channel 36 --network 10.0.0.0/24 
+python3 EvilN.py --iface wlan0 --ssid "MyLan" --band 5 --channel 36 --network 10.0.0.0/24 --CaptivePortal microsoft
 ```
 5GHz with default Captive Portal:
 ```python
-python3 EvilN.py --iface wlan0 --ssid "MyLan" --band 5 --channel 36 --network 10.0.0.0/24 
+python3 EvilN.py --iface wlan0 --ssid "MyLan" --band 5 --channel 36 --network 10.0.0.0/24 --CaptivePortal default
 ```
 
 
