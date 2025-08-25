@@ -847,7 +847,7 @@ def main():
         check_root()
         check_dependencies()
 
-        signal.signal(signal.SIGINT, cleanup)
+        signal.signal(signal.SIGINT, cleanup_dual)
 
         manage_service('NetworkManager', 'stop')
         manage_service('systemd-resolved', 'stop')
