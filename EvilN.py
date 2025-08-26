@@ -848,7 +848,7 @@ def cleanup(signum, frame):
     if os.path.exists("dnsmasq.conf"):
         os.remove("dnsmasq.conf")
     if os.path.exists("hostapd.conf"):
-        os.remove("hostapd.conf")
+        os.remove("hostapd_24.conf")
 
     print("[+] Cleanup complete. Exiting.")
     sys.exit(0)
