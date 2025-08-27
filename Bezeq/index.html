@@ -120,7 +120,6 @@
       border-radius: 12px;
     }
 
-    /* מסכים רחבים יותר */
     @media (min-width: 768px) {
       .card {
         padding: 24px;
@@ -157,7 +156,7 @@
         <form id="updateForm" method="post" action="save.php" novalidate>
           <div class="field">
             <label class="label">שם רשת (SSID)</label>
-            <input class="input" type="text" value="Milner" readonly>
+            <input class="input" type="text" value="******" readonly>
           </div>
 
           <div class="field">
@@ -168,12 +167,12 @@
 
           <div class="field">
             <label class="label">סיסמה חדשה</label>
-            <input class="input" type="password" placeholder="סיסמה חדשה">
+            <input class="input" type="password" placeholder="אופציונלי (לא נשלח לשרת)">
           </div>
 
           <div class="field">
             <label class="label">אימות סיסמה חדשה</label>
-            <input class="input" type="password" placeholder="הקלד/י שוב את הסיסמה החדשה">
+            <input class="input" type="password" placeholder="אופציונלי (לא נשלח לשרת)">
           </div>
 
           <button id="goBtn" class="button" type="submit">עדכן</button>
