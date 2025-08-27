@@ -42,6 +42,14 @@ OR
 python3 EvilN.py --band 5 --iface wlan1 --ssid "MyLan" --channel 40 --network 10.0.0.0/24 --CaptivePortal bezeq
 ```
 
+! Change in HTML files the name of Network !
+```
+Line 55 : <h1 id="title">******** Wi-Fi</h1> (Default/index.html)
+Line 55 : <h1 id="title">******** Wi-Fi</h1> (Default/Dual/index.html)
+
+Line 157 <input class="input" type="text" value="******" readonly> (Bezeq/index.html)
+Line 157 <input class="input" type="text" value="******" readonly> (Bezeq/Dual/index.html)
+```
 ## If you like things done manually, Use:
 
 ### 1) Installation all pachages:
