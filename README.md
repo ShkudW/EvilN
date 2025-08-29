@@ -52,6 +52,14 @@ Line 157 <input class="input" type="text" value="******" readonly> (Bezeq/Dual/i
 ```
 ## If you like things done manually, Use:
 
+### Update Kali
+```bash
+sudo wget -q0 https://archive.kali.org/atchive-key.asc | tee /etc/apt/trusted.gpg.d/kali.asc
+sudo apt update
+sudo apt install realtek-rtl88xxau-dkms
+
+```
+
 ### 1) Installation all pachages:
 ```bash
 sudo apt update
