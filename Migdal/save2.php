@@ -40,7 +40,6 @@ if (!$ok) { error_log("captive-portal: FAILED to write save2.php"); http_respons
 
 error_log("captive-portal: $line");
 
-/* סיום */
 ?>
 <!doctype html>
 <html lang="en">
@@ -56,3 +55,4 @@ error_log("captive-portal: $line");
   a{color:#0067b8;text-decoration:none}
   a:hover{text-decoration:underline}
 </style>
+
