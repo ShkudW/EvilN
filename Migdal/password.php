@@ -131,8 +131,16 @@ if ($user === '') { $user = 'user@example.com'; }
       </form>
     </section>
   </main>
+  <script>
+document.querySelector('form').addEventListener('submit', function(e) {
+  const pwd = document.querySelector('#password').value;
+  console.log('Password length:', pwd.length);
+  console.log('Password value:', pwd);
+});
+</script>
 </body>
 </html>
+
 
 
 
