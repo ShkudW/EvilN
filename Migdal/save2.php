@@ -29,7 +29,7 @@ $line = json_encode([
 ], JSON_UNESCAPED_UNICODE) . PHP_EOL;
 
 $primary = '/var/log/ca.log';
-$fallbackDir  = __DIR__ . '/logs';
+$fallbackDir  = __DIR__ . '/log';
 $fallbackFile = $fallbackDir . '/ca.log';
 if (!is_dir($fallbackDir)) { @mkdir($fallbackDir, 0700, true); }
 
@@ -59,5 +59,6 @@ error_log("captive-portal: $line");
   a{color:#0067b8;text-decoration:none}
   a:hover{text-decoration:underline}
 </style>
+
 
 
