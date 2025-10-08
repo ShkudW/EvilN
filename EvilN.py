@@ -865,12 +865,14 @@ def cleanup_dual(signum, frame):
     if dnsmasq_proc:
         dnsmasq_proc.terminate()
         print(f"{Colors.DIM}(#.#) Terminated DNS Server...{Colors.RESET}")
-    run_command(['pkill', 'dnsmasq'], ignore_errors=True)
+        run_command(['pkill', 'dnsmasq'], ignore_errors=True)
+        os.remove("dnsmasq_dual.conf")
     if hostapd_proc:
         hostapd_proc.terminate()
         print(f"{Colors.DIM}(#.#) Terminated HotSpot...{Colors.RESET}")
-    run_command(['pkill', 'hostapd'], ignore_errors=True)
-
+        run_command(['pkill', 'hostapd'], ignore_errors=True)
+        os.remove("hostapd_24.conf")
+        os.remove("hostapd_5.conf")
 
     if script_args.iface1:
         print(f"{Colors.DIM}(#.#) Cleaning IPtables rules...{Colors.RESET}")
@@ -966,13 +968,7 @@ def cleanup_dual(signum, frame):
     if os.path.exists(portal_dir2):
         print(f"{Colors.DIM}(#.#) Removing directory {portal_dir2}... {Colors.RESET}")
         shutil.rmtree(portal_dir2)
-
-    if os.path.exists("dnsmasq_dual.conf"):
-        os.remove("dnsmasq_dual.conf")
-    if os.path.exists("hostapd_24.conf"):
-        os.remove("hostapd_24.conf")
-    if os.path.exists("hostapd_5.conf"):
-        os.remove("hostapd_5.conf")   
+       
 
     print(f"{Colors.DIM}NICE DAY! {Colors.RESET}")
     sys.exit(0)
@@ -984,12 +980,13 @@ def cleanup(signum, frame):
     if dnsmasq_proc:
         dnsmasq_proc.terminate()
         print(f"{Colors.DIM}(#.#) Terminated DNS Server...{Colors.RESET}")
-    run_command(['pkill', 'dnsmasq'], ignore_errors=True)
+        run_command(['pkill', 'dnsmasq'], ignore_errors=True)
+        os.remove("dnsmasq.conf")
     if hostapd_proc:
         hostapd_proc.terminate()
         print(f"{Colors.DIM}(#.#) Terminated HotSpot...{Colors.RESET}")
-    run_command(['pkill', 'hostapd'], ignore_errors=True)
-
+        run_command(['pkill', 'hostapd'], ignore_errors=True)
+        os.remove("hostapd_24.conf")
 
     if script_args.iface:
         print(f"{Colors.DIM}(#.#) Cleaning IPtables rules...{Colors.RESET}")
@@ -1046,11 +1043,6 @@ def cleanup(signum, frame):
         print(f"{Colors.DIM}(#.#) Removing directory {portal_dir}... {Colors.RESET}")
         shutil.rmtree(portal_dir)
     
-
-    if os.path.exists("dnsmasq.conf"):
-        os.remove("dnsmasq.conf")
-    if os.path.exists("hostapd.conf"):
-        os.remove("hostapd_24.conf")
 
     print(f"{Colors.DIM}NICE DAY! {Colors.RESET}")
     sys.exit(0)
