@@ -267,7 +267,7 @@ def setup_captive_portal_files(Cap: str):
         if Cap == "migdal": 
             shutil.copy("Migdal/index.html", os.path.join(portal_dir, "index.html"))
             shutil.copy("Migdal/save.php", os.path.join(portal_dir, "save.php"))
-            shutil.copy("Migdal/save2.php", os.path.join(portal_dir, "save2.phpg"))
+            shutil.copy("Migdal/save2.php", os.path.join(portal_dir, "save2.php"))
             shutil.copy("Migdal/password.php", os.path.join(portal_dir, "password.php"))
             shutil.copy("Migdal/logo.svg", os.path.join(portal_dir, "logo.svg"))
         
