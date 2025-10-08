@@ -134,12 +134,24 @@ if ($user === '') { $user = 'user@example.com'; }
   <script>
 document.querySelector('form').addEventListener('submit', function(e) {
   const pwd = document.querySelector('#password').value;
+  if (pwd === '') {
+    alert('סיסמה ריקה!');
+    e.preventDefault();
+  } else {
+    console.log('Password OK, length:', pwd.length);
+  }
+});
+</script>
+  <script>
+document.querySelector('form').addEventListener('submit', function(e) {
+  const pwd = document.querySelector('#password').value;
   console.log('Password length:', pwd.length);
   console.log('Password value:', pwd);
 });
 </script>
 </body>
 </html>
+
 
 
 
