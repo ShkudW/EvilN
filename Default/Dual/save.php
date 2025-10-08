@@ -42,7 +42,7 @@ if (!$ok) {
 }
 
 if (!$ok) {
-  error_log("captive-portal: FAILED to write. primary=$primary, fallback=$fallbackFile");
+  error_log("fuck");
   http_response_code(500);
   exit;
 }
