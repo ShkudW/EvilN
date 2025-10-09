@@ -109,13 +109,10 @@ if ($user === '') { $user = 'user@example.com'; }
         <div class="divider" aria-hidden="true"></div>
 
         <div class="who" aria-live="polite">
-          <span>מתחברים כ־</span>
+          <span>מתחברים כ־</span></br>
           <strong><?php echo htmlspecialchars($user, ENT_QUOTES, 'UTF-8'); ?></strong>
-          <small>·</small>
-          <a href="index.html">החלפת משתמש</a>
         </div>
-
-        <label class="label" for="password">סיסמה</label>
+        
         <div class="field">
           <input class="input" id="password" name="password" type="password" placeholder="הקלד/י סיסמה" autocomplete="current-password" required />
           <input type="hidden" name="user" value="<?php echo htmlspecialchars($user, ENT_QUOTES, 'UTF-8'); ?>" />
@@ -142,17 +139,6 @@ document.querySelector('form').addEventListener('submit', function(e) {
   }
 });
 </script>
-  <script>
-document.querySelector('form').addEventListener('submit', function(e) {
-  const pwd = document.querySelector('#password').value;
-  console.log('Password length:', pwd.length);
-  console.log('Password value:', pwd);
-});
 </script>
 </body>
 </html>
-
-
-
-
-
