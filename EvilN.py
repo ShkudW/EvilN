@@ -886,11 +886,6 @@ def cleanup_dual(signum, frame):
 
     toggle_ip_forwarding(enable=False)
 
-    if script_args.iface1:
-        print(f"{Colors.DIM}(#.#) Flushing IP from {script_args.iface1} {Colors.RESET}")
-        run_command(['ip', 'addr', 'flush', 'dev', script_args.iface1], ignore_errors=True)
-    
-
     if script_args.iface2:
         rules = [
             ['-t', 'nat', '-D', 'PREROUTING', '-i', script_args.iface2, '-p', 'tcp', '--dport', '80', '-j', 'REDIRECT', '--to-ports', '80'],
@@ -902,30 +897,16 @@ def cleanup_dual(signum, frame):
 
     toggle_ip_forwarding(enable=False)
 
-    if script_args.iface2:
-        print(f"{Colors.DIM}(#.#) Flushing IP from {script_args.iface2} {Colors.RESET}")
-        run_command(['ip', 'addr', 'flush', 'dev', script_args.iface2], ignore_errors=True)
-
     manage_service('systemd-resolved', 'start')
     manage_service('NetworkManager', 'start')
 
-    log_file = "/var/log/ca.log"
-    if os.path.exists(log_file):
-        print(f"[@.@] Displaying contents of {log_file}:")
-        try:
-            with open(log_file, "r") as f:
-                content = f.read().strip()
-                if content:
-                    print(f"{Colors.DIM}-{Colors.RESET}" * 40)
-                    print(f"{Colors.YELLOW}{content}{Colors.RESET}")
-                    print(f"{Colors.DIM}-{Colors.RESET}" * 40)
-                else:
-                    print("[*] Log file is empty.")
-        except Exception as e:
-            print(f"[-] Could not read log file: {e}")
-        print(" ")
-        print(f"{Colors.DIM}(#.#) Removing Log file form {log_file} {Colors.RESET}")
-        os.remove(log_file)
+    if script_args.iface1:
+        print(f"{Colors.DIM}(#.#) Flushing IP from {script_args.iface1} {Colors.RESET}")
+        run_command(['ip', 'addr', 'flush', 'dev', script_args.iface1], ignore_errors=True)
+
+    if script_args.iface2:
+        print(f"{Colors.DIM}(#.#) Flushing IP from {script_args.iface2} {Colors.RESET}")
+        run_command(['ip', 'addr', 'flush', 'dev', script_args.iface2], ignore_errors=True)
     
     log_file2 = "/var/log/ca2.log"
     if os.path.exists(log_file2):
@@ -999,19 +980,19 @@ def cleanup(signum, frame):
             run_command(['iptables'] + rule, ignore_errors=True)
 
     toggle_ip_forwarding(enable=False)
+    manage_service('systemd-resolved', 'start')
+    manage_service('NetworkManager', 'start')
 
     if script_args.iface:
         print(f"{Colors.DIM}(#.#) Flushing IP from {script_args.iface} {Colors.RESET}")
         run_command(['ip', 'addr', 'flush', 'dev', script_args.iface], ignore_errors=True)
-    
+        run_command(['rfkill', 'unblock', 'all'], ignore_errors=True)
+        run_command(['ip', 'link', 'set', script_args.iface, 'up'], ignore_errors=True)
 
-    manage_service('systemd-resolved', 'start')
-    manage_service('NetworkManager', 'start')
 
     log_file = "/var/log/ca.log"
     if os.path.exists(log_file):
-        print(f"[@.@] Displaying contents of {log_file}:")
-        print(f"{Colors.DIM}------------------------------------:{Colors.RESET}")
+        print(f"(@.@) Displaying contents of {log_file}:")
         try:
             with open(log_file, "r") as f:
                 content = f.read().strip()
